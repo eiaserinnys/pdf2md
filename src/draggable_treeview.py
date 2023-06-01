@@ -1,9 +1,17 @@
-from tkinter.font import Font
 from tkinter import ttk
+import tkinter as tk
 
 class DraggableTreeview(ttk.Treeview):
     def __init__(self, master=None, **kwargs):
+        kwargs['column'] = ("c1", "c2")
+        kwargs['show'] = 'headings'
         super().__init__(master, **kwargs)
+
+        self.column("# 1", anchor=tk.CENTER, width=50, stretch=tk.NO)
+        self.heading("# 1", text="Page")
+        self.column("# 2", anchor=tk.SW)
+        self.heading("# 2", text="Text")
+
         self.bind("<Button-1>", self.on_drag_start)
         self.bind("<B1-Motion>", self.on_drag_motion)
         self.bind("<ButtonRelease-1>", self.on_drag_release)
