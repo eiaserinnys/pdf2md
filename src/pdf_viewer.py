@@ -22,15 +22,14 @@ class PDFViewer(tk.Frame):
         # Initialize Canvas
         self.canvas = PdfCanvas(self.paned_window, self.pdf)
         self.paned_window.add(self.canvas)
+        self.canvas.bind("<<SafeAreaChanged>>", self.on_safe_area_changed)
 
         # Initialize Text widget
         self.dtv = DraggableTreeview(self.paned_window)
         self.dtv.bind("<<TreeviewSelect>>", self.on_treeview_select)
 
         # Add elements to the DraggableTreeview
-        for key, element in self.pdf.iter_elements():
-            if element.visible:
-                self.dtv.insert('', "end", key, values=(element.page_number, element.text))
+        self.add_elements_to_treeview()
 
         self.dtv.pack(fill="both", expand=True)
         self.paned_window.add(self.dtv)
@@ -38,6 +37,11 @@ class PDFViewer(tk.Frame):
         # Set the minimum size of the Text widget to 60% of the window width
         self.paned_window.update()
         self.paned_window.sashpos(0, 600)
+
+    def add_elements_to_treeview(self):
+        for key, element in self.pdf.iter_elements():
+            if element.visible:
+                self.dtv.insert('', "end", key, values=(element.page_number, element.text))
 
     def on_treeview_select(self, event):
         # Get the selected item
@@ -47,3 +51,9 @@ class PDFViewer(tk.Frame):
         page_number, _ = self.dtv.item(selected_item, "values")
 
         self.canvas.change_page(int(page_number) - 1)
+
+    def on_safe_area_changed(self, event):
+        for item in self.dtv.get_children():
+            self.dtv.delete(item)
+
+        self.add_elements_to_treeview()

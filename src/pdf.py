@@ -35,6 +35,10 @@ class Pdf:
         self.pdfminer_pages = list(extract_pages(pdf_path, laparams = params))
 
         self.margin = PdfRect(0.15, 0.08, 0.85, 0.92)
+
+        self.recalculate_elements()
+
+    def recalculate_elements(self):
         self.elements = {}
 
         index = 0
@@ -44,9 +48,9 @@ class Pdf:
                     element.bbox, 
                     (
                         pdfminer_page.width * self.margin.x1, 
-                        pdfminer_page.height * self.margin.y1, 
+                        pdfminer_page.height * (1 - self.margin.y2),
                         pdfminer_page.width * self.margin.x2,
-                        pdfminer_page.height * self.margin.y2
+                        pdfminer_page.height * (1 - self.margin.y1), 
                     ))
 
                 if isinstance(element, LTTextBox):
@@ -87,3 +91,7 @@ class Pdf:
     
     def get_page_number(self):
         return len(self.pdfminer_pages)
+    
+    def set_safe_margin(self, margin):
+        self.margin = margin
+        self.recalculate_elements()

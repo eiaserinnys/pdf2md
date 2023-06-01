@@ -1,5 +1,7 @@
 import tkinter as tk
 from PIL import Image, ImageTk
+from src.draggable_rectangle import DraggableRectangle
+from src.pdf import PdfRect
 
 class PdfCanvas(tk.Canvas):
     def __init__(self, master=None, pdf=None, **kwargs):
@@ -10,6 +12,7 @@ class PdfCanvas(tk.Canvas):
         self.bind("<MouseWheel>", self.on_mouse_wheel)
         self.bind("<Button-4>", self.on_scroll_up)  # bind scroll up event
         self.bind("<Button-5>", self.on_scroll_down)  # bind scroll down event
+        self.bind("<<SafeAreaDragEnd>>", self.on_drag_end)
         self.current_page = 0
         self.elements = []
 
@@ -96,6 +99,9 @@ class PdfCanvas(tk.Canvas):
                 self.itemconfig(image_id, state='hidden')  # hide image
 
     def clear(self):
+        if hasattr(self, 'safe_area'):
+            self.safe_area.delete()
+            self.safe_area = None
         self.delete('all')  # delete all canvas items
         self.elements = []  # clear rectangles list
         self.photoimg = None
@@ -115,16 +121,16 @@ class PdfCanvas(tk.Canvas):
         self.create_image(0, 0, image=self.photoimg, anchor='nw')
 
         # Draw the pdfminer layout on the PIL Image
-        scale_factor_x = img.width / page_width
-        scale_factor_y = img.height / page_height
+        self.scale_factor_x = img.width / page_width
+        self.scale_factor_y = img.height / page_height
 
         #for element in pdfminer_page:
         for key, element in elements:
             x1, y1, x2, y2 = element.bbox
-            x1, x2 = sorted([x1 * scale_factor_x, x2 * scale_factor_x])
+            x1, x2 = sorted([x1 * self.scale_factor_x, x2 * self.scale_factor_x])
             x2 = max(x2, x1 + 1)  # Ensure x2 is always greater than x1
 
-            y1, y2 = sorted([img.height - y1 * scale_factor_y, img.height - y2 * scale_factor_y])
+            y1, y2 = sorted([img.height - y1 * self.scale_factor_y, img.height - y2 * self.scale_factor_y])
             y2 = max(y2, y1 + 1)  # Ensure y2 is always greater than y1
 
             # Create the rectangle and save the handle
@@ -136,8 +142,26 @@ class PdfCanvas(tk.Canvas):
                 width=2 if element.visible else 1,
                 alpha=0.25)
 
-        safe_x1 = scale_factor_x * page_width * safe_margin.x1
-        safe_x2 = scale_factor_x * page_width * safe_margin.x2
-        safe_y1 = scale_factor_y * page_height * safe_margin.y1
-        safe_y2 = scale_factor_y * page_height * safe_margin.y2
-        super().create_rectangle(safe_x1, safe_y1, safe_x2, safe_y2, outline="red")
+        safe_x1 = self.scale_factor_x * page_width * safe_margin.x1
+        safe_x2 = self.scale_factor_x * page_width * safe_margin.x2
+        safe_y1 = self.scale_factor_y * page_height * safe_margin.y1
+        safe_y2 = self.scale_factor_y * page_height * safe_margin.y2
+        self.safe_area = DraggableRectangle(self, safe_x1, safe_y1, safe_x2, safe_y2, outline="red")
+
+    def on_drag_end(self, event):
+        # Update the safe_margin based on the new position of safe_area
+        x1, y1, x2, y2 = self.coords(self.safe_area.rectangle)
+        page_width, page_height = self.pdf.get_page_extent(self.current_page)
+        
+        new_safe_margin = PdfRect(
+                x1 / self.scale_factor_x / page_width,
+                y1 / self.scale_factor_y / page_height,
+                x2 / self.scale_factor_x / page_width,
+                y2 / self.scale_factor_y / page_height
+            )
+
+        self.pdf.set_safe_margin(new_safe_margin)
+
+        self.redraw()
+
+        self.event_generate("<<SafeAreaChanged>>")
