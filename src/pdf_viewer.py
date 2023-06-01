@@ -14,15 +14,13 @@ class PDFViewer(tk.Frame):
 
         # Load the PDF with PyMuPDF and pdfminer
         self.pdf = Pdf(pdf_path)
-        self.current_page = 0
 
         # Create a PanedWindow with horizontal orientation
         self.paned_window = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
         self.paned_window.pack(fill='both', expand=1)
 
         # Initialize Canvas
-        self.canvas = PdfCanvas(self.paned_window)
-        self.canvas.bind("<Configure>", self.on_resize)
+        self.canvas = PdfCanvas(self.paned_window, self.pdf)
         self.paned_window.add(self.canvas)
 
         # Initialize Text widget
@@ -47,18 +45,5 @@ class PDFViewer(tk.Frame):
 
         # Extract the page number from the selected item
         page_number, _ = self.dtv.item(selected_item, "values")
-        self.current_page = int(page_number) - 1
 
-        # Redraw the canvas
-        self.redraw()
-   
-    def on_resize(self, event):
-        """Handle window resizing."""
-        self.redraw()
-
-    def redraw(self):
-        self.canvas.show_page(
-            self.pdf.get_pixmap(self.current_page),
-            self.pdf.get_page_extent(self.current_page), 
-            self.pdf.get_safe_margin(),
-            self.pdf.iter_elements_page(self.current_page))
+        self.canvas.change_page(int(page_number) - 1)

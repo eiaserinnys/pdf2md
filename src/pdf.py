@@ -1,6 +1,6 @@
 import fitz  # PyMuPDF
 from dataclasses import dataclass
-from pdfminer.layout import LTTextBox, LTImage, LTFigure
+from pdfminer.layout import LAParams, LTTextBox, LTImage, LTFigure
 from pdfminer.high_level import extract_pages
 from src.utility import check_overlap
 
@@ -22,7 +22,17 @@ class Pdf:
     def __init__(self, pdf_path):
         # Load the PDF with PyMuPDF and pdfminer
         self.doc = fitz.open(pdf_path)
-        self.pdfminer_pages = list(extract_pages(pdf_path))
+
+        params = LAParams(
+            line_overlap = 0.5, 
+            char_margin = 2.0, 
+            line_margin = 0.3, 
+            word_margin = 0.1, 
+            boxes_flow = 0.5, 
+            detect_vertical = False, 
+            all_texts = False)
+
+        self.pdfminer_pages = list(extract_pages(pdf_path, laparams = params))
 
         self.margin = PdfRect(0.15, 0.08, 0.85, 0.92)
         self.elements = {}
@@ -74,3 +84,6 @@ class Pdf:
     
     def get_safe_margin(self):
         return self.margin
+    
+    def get_page_number(self):
+        return len(self.pdfminer_pages)

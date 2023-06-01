@@ -2,10 +2,51 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 class PdfCanvas(tk.Canvas):
-    def __init__(self, master=None, **kwargs):
+    def __init__(self, master=None, pdf=None, **kwargs):
         super().__init__(master, **kwargs)
+        self.pdf = pdf
         self.bind('<Motion>', self.on_mouse_move)
+        self.bind("<Configure>", self.on_resize)
+        self.bind("<MouseWheel>", self.on_mouse_wheel)
+        self.bind("<Button-4>", self.on_scroll_up)  # bind scroll up event
+        self.bind("<Button-5>", self.on_scroll_down)  # bind scroll down event
+        self.current_page = 0
         self.elements = []
+
+    def change_page(self, new_page_number):
+        if new_page_number >= 0 and new_page_number < self.pdf.get_page_number():
+            self.current_page = new_page_number
+            self.redraw()
+   
+    def on_mouse_wheel(self, event):
+        """Handle mouse wheel scrolling."""
+        # Check the direction of the scroll (positive for up, negative for down)
+        if event.delta > 0:
+            self.change_page(self.current_page - 1)
+        else:
+            self.change_page(self.current_page + 1)
+
+        # Redraw the canvas
+        self.redraw()
+
+    def on_scroll_up(self, event):
+        """Handle scroll up action."""
+        self.change_page(self.current_page - 1)
+
+    def on_scroll_down(self, event):
+        """Handle scroll down action."""
+        self.change_page(self.current_page + 1)
+
+    def on_resize(self, event):
+        """Handle window resizing."""
+        self.redraw()
+
+    def redraw(self):
+        self.show_page(
+            self.pdf.get_pixmap(self.current_page),
+            self.pdf.get_page_extent(self.current_page), 
+            self.pdf.get_safe_margin(),
+            self.pdf.iter_elements_page(self.current_page))
 
     def create_element(self, key, x1, y1, x2, y2, **kwargs):
         alpha = int(kwargs.pop('alpha', 1) * 255)
@@ -57,6 +98,7 @@ class PdfCanvas(tk.Canvas):
     def clear(self):
         self.delete('all')  # delete all canvas items
         self.elements = []  # clear rectangles list
+        self.photoimg = None
 
     def show_page(self, pix, page_extent, safe_margin, elements):
 
@@ -78,15 +120,12 @@ class PdfCanvas(tk.Canvas):
 
         #for element in pdfminer_page:
         for key, element in elements:
-            x1, y1, x2, y2 = [x * scale_factor_x for x in element.bbox[:2]] + [x * scale_factor_y for x in element.bbox[2:]]
+            x1, y1, x2, y2 = element.bbox
+            x1, x2 = sorted([x1 * scale_factor_x, x2 * scale_factor_x])
+            x2 = max(x2, x1 + 1)  # Ensure x2 is always greater than x1
 
-            x1, x2 = min(x1, x2), max(x1, x2)
-            if x1 == x2:
-                x2 = x1 + 1
-
-            y1, y2 = min(img.height - y1, img.height - y2), max(img.height - y1, img.height - y2)
-            if y1 == y2:
-                y2 = y1 + 1
+            y1, y2 = sorted([img.height - y1 * scale_factor_y, img.height - y2 * scale_factor_y])
+            y2 = max(y2, y1 + 1)  # Ensure y2 is always greater than y1
 
             # Create the rectangle and save the handle
             self.create_element(
