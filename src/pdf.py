@@ -26,7 +26,7 @@ class Pdf:
         params = LAParams(
             line_overlap = 0.5, 
             char_margin = 2.0, 
-            line_margin = 0.3, 
+            line_margin = 0.5, 
             word_margin = 0.1, 
             boxes_flow = 0.5, 
             detect_vertical = False, 
@@ -54,6 +54,7 @@ class Pdf:
                     ))
 
                 if isinstance(element, LTTextBox):
+                    # for text_line in element:
                     text = element.get_text()
                     text = text.replace("-\n", "")
                     text = text.replace("\n", " ")
@@ -61,6 +62,9 @@ class Pdf:
                     self.elements[index] = PdfElement(page_number + 1, element.bbox, text, overlap)
                     index += 1
                 elif isinstance(element, LTFigure):
+                    self.elements[index] = PdfElement(page_number + 1, element.bbox, "figure", overlap)
+                    index += 1
+                elif isinstance(element, LTImage):
                     self.elements[index] = PdfElement(page_number + 1, element.bbox, "image", overlap)
                     index += 1
 

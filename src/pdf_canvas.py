@@ -52,6 +52,10 @@ class PdfCanvas(tk.Canvas):
             self.pdf.iter_elements_page(self.current_page))
 
     def create_element(self, key, x1, y1, x2, y2, **kwargs):
+
+        text = kwargs.pop('text', '')  # Get text from the kwargs or use an empty string as a default.
+        width = kwargs.get('width', 1)
+
         alpha = int(kwargs.pop('alpha', 1) * 255)
         fill = kwargs.pop('fill', 'white')
         fill = self.winfo_rgb(fill) + (alpha,)
@@ -61,6 +65,12 @@ class PdfCanvas(tk.Canvas):
         self.itemconfig(image_id, state='hidden')  # initially hide the image
 
         rectangle = super().create_rectangle(x1, y1, x2, y2, **kwargs)
+
+        # Add text at the top left corner inside the rectangle.
+        if text is not None:
+            text_id = self.create_text(x1 - 5 - width/2, y1 - width/2, text=text, anchor='ne', fill='white')  # Place the text 5 pixels away from the top left corner.
+            text_bg = self.create_rectangle(self.bbox(text_id),fill="green")
+            self.tag_lower(text_bg,text_id)
 
         self.elements.append((key, rectangle, image_id, image))
 
@@ -125,6 +135,7 @@ class PdfCanvas(tk.Canvas):
         self.scale_factor_y = img.height / page_height
 
         #for element in pdfminer_page:
+        index = 1
         for key, element in elements:
             x1, y1, x2, y2 = element.bbox
             x1, x2 = sorted([x1 * self.scale_factor_x, x2 * self.scale_factor_x])
@@ -140,7 +151,11 @@ class PdfCanvas(tk.Canvas):
                 fill="green" if element.visible else "gray80", 
                 outline="green" if element.visible else "gray80", 
                 width=2 if element.visible else 1,
-                alpha=0.25)
+                alpha=0.25,
+                text=index if element.visible else None)
+            
+            if element.visible:
+                index += 1
 
         safe_x1 = self.scale_factor_x * page_width * safe_margin.x1
         safe_x2 = self.scale_factor_x * page_width * safe_margin.x2
