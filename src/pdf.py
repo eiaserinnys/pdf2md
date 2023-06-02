@@ -8,7 +8,10 @@ from src.utility import check_overlap
 class PdfPage:
     def __init__(self, page_number):
         self.page_number = page_number
-        self.elements = {}
+        self.elements = []
+
+    def append(self, key, element):
+        self.elements.append((key, element))
 
 @dataclass
 class PdfRect:
@@ -71,13 +74,13 @@ class Pdf:
                     text = text.replace("-\n", "")
                     text = text.replace("\n", " ")
                     text = text.strip()
-                    cur_page.elements[self.index] = PdfElement(page_number + 1, element, element.bbox, text, True, True)
+                    cur_page.append(self.index, PdfElement(page_number + 1, element, element.bbox, text, True, True))
                     self.index += 1
                 elif isinstance(element, LTFigure):
-                    cur_page.elements[self.index] = PdfElement(page_number + 1, element, element.bbox, "figure", True, True)
+                    cur_page.append(self.index, PdfElement(page_number + 1, element, element.bbox, "figure", True, True))
                     self.index += 1
                 elif isinstance(element, LTImage):
-                    cur_page.elements[self.index] = PdfElement(page_number + 1, element, element.bbox, "image", True, True)
+                    cur_page.append(self.index, PdfElement(page_number + 1, element, element.bbox, "image", True, True))
                     self.index += 1
 
     def recalculate_safe_area(self):
@@ -89,40 +92,46 @@ class Pdf:
                 pdfminer_page.width * self.margin.x2,
                 pdfminer_page.height * (1 - self.margin.y1), 
             )
-            for element in page.elements.values():
+            for _, element in page.elements:
                 element.safe = check_overlap(element.bbox, safe_area)
 
-    def toggle_visibility(self, key):
+    def toggle_visibility(self, key_to_toggle):
         for page in self.pages:
-            if key in page.elements:
-                page.elements[key].visible = not page.elements[key].visible
+            for key, element in page.elements:
+                if key == key_to_toggle:
+                    element.visible = not element.visible
 
-    def split_element(self, key):
+    def split_element(self, key_to_split):
         for page in self.pages:
-            if key in page.elements:
-                element = page.elements[key]
-                if element.element and isinstance(element.element, LTTextBox):
-                    for line in element.element:
-                        text = line.get_text()
-                        text = text.replace("-\n", "")
-                        text = text.replace("\n", " ")
-                        text = text.strip()
-                        page.elements[self.index] = PdfElement(element.page_number, line, line.bbox, text, True, True)
-                        self.index += 1
-                    page.elements.pop(key)
-                return
+            for i, (key, element) in enumerate(page.elements):
+                if key == key_to_split:
+                    if element.element and isinstance(element.element, LTTextBox):
+                        split_elements = []  # list to hold new elements
+                        for line in element.element:
+                            text = line.get_text()
+                            text = text.replace("-\n", "")
+                            text = text.replace("\n", " ")
+                            text = text.strip()
+                            split_elements.append((self.index, PdfElement(element.page_number, line, line.bbox, text, True, True)))
+                            self.index += 1
+                        # remove the original element
+                        page.elements.pop(i)
+                        # insert new elements at the same position
+                        for j, new_element in enumerate(split_elements):
+                            page.elements.insert(i + j, new_element)
+                        break
 
     def iter_elements(self):
         """Generator method to iterate over elements safely."""
         for page in self.pages:
-            for key, element in page.elements.items():
+            for key, element in page.elements:
                 yield key, element
 
     def iter_elements_page(self, page_number):
         """Generator method to iterate over elements safely."""
         if page_number < len(self.pages):
             page = self.pages[page_number]
-            for key, element in page.elements.items():
+            for key, element in page.elements:
                 yield key, element
 
     def get_pixmap(self, page_number):
