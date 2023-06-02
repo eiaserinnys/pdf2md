@@ -20,6 +20,7 @@ class PdfRect:
 @dataclass
 class PdfElement:
     page_number: int
+    element: object
     bbox: PdfRect
     text: str
     safe: bool
@@ -57,7 +58,7 @@ class Pdf:
     def build_element_list(self):
         self.pages = []
 
-        index = 0
+        self.index = 0
         for page_number, pdfminer_page in enumerate(self.pdfminer_pages):
 
             self.pages.append(PdfPage(page_number + 1))
@@ -70,14 +71,14 @@ class Pdf:
                     text = text.replace("-\n", "")
                     text = text.replace("\n", " ")
                     text = text.strip()
-                    cur_page.elements[index] = PdfElement(page_number + 1, element.bbox, text, True, True)
-                    index += 1
+                    cur_page.elements[self.index] = PdfElement(page_number + 1, element, element.bbox, text, True, True)
+                    self.index += 1
                 elif isinstance(element, LTFigure):
-                    cur_page.elements[index] = PdfElement(page_number + 1, element.bbox, "figure", True, True)
-                    index += 1
+                    cur_page.elements[self.index] = PdfElement(page_number + 1, element, element.bbox, "figure", True, True)
+                    self.index += 1
                 elif isinstance(element, LTImage):
-                    cur_page.elements[index] = PdfElement(page_number + 1, element.bbox, "image", True, True)
-                    index += 1
+                    cur_page.elements[self.index] = PdfElement(page_number + 1, element, element.bbox, "image", True, True)
+                    self.index += 1
 
     def recalculate_safe_area(self):
         for page in self.pages:
@@ -95,6 +96,21 @@ class Pdf:
         for page in self.pages:
             if key in page.elements:
                 page.elements[key].visible = not page.elements[key].visible
+
+    def split_element(self, key):
+        for page in self.pages:
+            if key in page.elements:
+                element = page.elements[key]
+                if element.element and isinstance(element.element, LTTextBox):
+                    for line in element.element:
+                        text = line.get_text()
+                        text = text.replace("-\n", "")
+                        text = text.replace("\n", " ")
+                        text = text.strip()
+                        page.elements[self.index] = PdfElement(element.page_number, line, line.bbox, text, True, True)
+                        self.index += 1
+                    page.elements.pop(key)
+                return
 
     def iter_elements(self):
         """Generator method to iterate over elements safely."""

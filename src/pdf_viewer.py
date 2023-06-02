@@ -23,7 +23,8 @@ class PDFViewer(tk.Frame):
         self.canvas = PdfCanvas(self.paned_window, self.pdf)
         self.paned_window.add(self.canvas)
         self.canvas.bind("<<SafeAreaChanged>>", self.on_safe_area_changed_by_canvas)
-        self.canvas.bind("<<ElementClicked>>", self.on_element_clicked_by_canvas)
+        self.canvas.bind("<<ElementLeftClicked>>", self.on_element_left_clicked_by_canvas)
+        self.canvas.bind("<<ElementRightClicked>>", self.on_element_right_clicked_by_canvas)
 
         # Initialize Text widget
         self.dtv = DraggableTreeview(self.paned_window)
@@ -68,8 +69,14 @@ class PDFViewer(tk.Frame):
         self.canvas.redraw()
         self.add_elements_to_treeview()
 
-    def on_element_clicked_by_canvas(self, event):
+    def on_element_left_clicked_by_canvas(self, event):
         key = self.canvas.get_clicked_element()
         self.pdf.toggle_visibility(key)
+        self.canvas.redraw()
+        self.add_elements_to_treeview()
+
+    def on_element_right_clicked_by_canvas(self, event):
+        key = self.canvas.get_clicked_element()
+        self.pdf.split_element(key)
         self.canvas.redraw()
         self.add_elements_to_treeview()

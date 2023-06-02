@@ -11,7 +11,8 @@ class PdfCanvas(tk.Canvas):
         self.bind('<Motion>', self.on_mouse_move)
         self.bind("<Configure>", self.on_resize)
 
-        self.bind("<Button-1>", self.on_mouse_down)
+        self.bind("<Button-1>", self.on_mouse_lb_down)
+        self.bind("<Button-3>", self.on_mouse_rb_down)
 
         # bind mouse wheel events
         self.bind("<MouseWheel>", self.on_mouse_wheel)  # Windows
@@ -58,15 +59,26 @@ class PdfCanvas(tk.Canvas):
         x1, y1, x2, y2 = self.coords(rectangle)
         return x1 <= x <= x2 and y1 <= y <= y2
 
-    def on_mouse_down(self, event):
+    def on_mouse_lb_down(self, event):
         """Handle mouse moving over the canvas."""
         x, y = self.canvasx(event.x), self.canvasy(event.y)
         for key, rectangle, _, _ in self.elements:
             if self.is_inside_rectangle(x, y, rectangle):
                 self.clicked_element = key
-                self.event_generate("<<ElementClicked>>")
+                self.event_generate("<<ElementLeftClicked>>")
 
-                # self.elements will be changed by <<ElementClicked>> event, so we need to break here
+                # self.elements will be changed by <<ElementLeftClicked>> event, so we need to break here
+                break
+
+    def on_mouse_rb_down(self, event):
+        """Handle mouse moving over the canvas."""
+        x, y = self.canvasx(event.x), self.canvasy(event.y)
+        for key, rectangle, _, _ in self.elements:
+            if self.is_inside_rectangle(x, y, rectangle):
+                self.clicked_element = key
+                self.event_generate("<<ElementRightClicked>>")
+
+                # self.elements will be changed by <<ElementRightClicked>> event, so we need to break here
                 break
 
     def get_clicked_element(self):
