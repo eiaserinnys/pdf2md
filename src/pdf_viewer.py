@@ -5,6 +5,7 @@ from src.draggable_treeview import DraggableTreeview
 from src.pdf import Pdf
 from src.pdf_canvas import PdfCanvas
 from src.utility import check_overlap
+from src.pdf_viewer_toolbar import PdfViewerToolbar
 
 class PDFViewer(tk.Frame):
     def __init__(self, pdf_path, master=None):
@@ -14,6 +15,9 @@ class PDFViewer(tk.Frame):
 
         # Load the PDF with PyMuPDF and pdfminer
         self.pdf = Pdf(pdf_path)
+
+        # Create toolbar
+        self.toolbar = PdfViewerToolbar(self)
 
         # Create a PanedWindow with horizontal orientation
         self.paned_window = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
@@ -39,6 +43,10 @@ class PDFViewer(tk.Frame):
         # Set the minimum size of the Text widget to 60% of the window width
         self.paned_window.update()
         self.paned_window.sashpos(0, 600)
+
+    def on_button_click(self):
+        # define what should happen when the button is clicked
+        pass
 
     def add_elements_to_treeview(self):
         self.dtv.delete_all_items()
