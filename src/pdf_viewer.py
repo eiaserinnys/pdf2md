@@ -40,8 +40,13 @@ class PDFViewer(tk.Frame):
 
     def add_elements_to_treeview(self):
         for key, element in self.pdf.iter_elements():
-            if element.visible:
-                self.dtv.insert('', "end", key, values=(element.page_number, element.text))
+            tags = ()
+            if not element.safe:
+                tags += ("unsafe",)
+            if element.page_number % 2 == 0:
+                tags += ("oddpage",)
+
+            self.dtv.insert('', "end", key, values=(element.page_number, element.text), tags=tags)
 
     def on_treeview_select(self, event):
         # Get the selected item

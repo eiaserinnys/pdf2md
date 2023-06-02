@@ -148,13 +148,13 @@ class PdfCanvas(tk.Canvas):
             self.create_element(
                 key, 
                 x1, y1, x2, y2, 
-                fill="green" if element.visible else "gray80", 
-                outline="green" if element.visible else "gray80", 
-                width=2 if element.visible else 1,
+                fill="green" if element.safe else "gray80", 
+                outline="green" if element.safe else "gray80", 
+                width=2 if element.safe else 1,
                 alpha=0.25,
-                text=index if element.visible else None)
+                text=index if element.safe else None)
             
-            if element.visible:
+            if element.safe:
                 index += 1
 
         safe_x1 = self.scale_factor_x * page_width * safe_margin.x1

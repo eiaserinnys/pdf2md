@@ -16,7 +16,7 @@ class PdfElement:
     page_number: int
     bbox: PdfRect
     text: str
-    visible: bool
+    safe: bool
 
 class Pdf:
     def __init__(self, pdf_path):

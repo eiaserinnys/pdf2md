@@ -7,6 +7,9 @@ class DraggableTreeview(ttk.Treeview):
         kwargs['show'] = 'headings'
         super().__init__(master, **kwargs)
 
+        self.tag_configure("unsafe", foreground="gray80")
+        self.tag_configure("oddpage", background="gray95")
+
         self.column("# 1", anchor=tk.CENTER, width=50, stretch=tk.NO)
         self.heading("# 1", text="Page")
         self.column("# 2", anchor=tk.SW)
