@@ -108,18 +108,25 @@ class PdfCanvas(tk.Canvas):
         return new_width, new_height
 
     def create_element(self, key, index, safe, visible, x1, y1, x2, y2):
+
+        width = 1
+
+        if safe:
+            if visible:
+                outline = fill = 'green'
+                width = 2
+            else:
+                outline = fill = 'black'
+        else:
+            outline = fill = 'gray80'
+
         alpha = int(0.25 * 255)
-        fill = 'green' if safe else 'black'
-        fill = fill if visible else 'gray40'
         fill = self.winfo_rgb(fill) + (alpha,)
         
         image = Image.new('RGBA', (int(x2-x1), int(y2-y1)), fill)
         image = ImageTk.PhotoImage(image)
         image_id = self.create_image(x1, y1, image=image, anchor='nw')
         self.itemconfig(image_id, state='hidden')  # initially hide the image
-
-        width = 2 if safe and visible else 1
-        outline = 'green' if safe and visible else 'gray40' if safe else 'black'
 
         kwargs = { 'outline': outline, 'width': width }
         rectangle = super().create_rectangle(x1, y1, x2, y2, **kwargs)
