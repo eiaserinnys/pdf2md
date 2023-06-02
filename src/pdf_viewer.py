@@ -22,7 +22,8 @@ class PDFViewer(tk.Frame):
         # Initialize Canvas
         self.canvas = PdfCanvas(self.paned_window, self.pdf)
         self.paned_window.add(self.canvas)
-        self.canvas.bind("<<SafeAreaChanged>>", self.on_safe_area_changed)
+        self.canvas.bind("<<SafeAreaChanged>>", self.on_safe_area_changed_by_canvas)
+        self.canvas.bind("<<ElementClicked>>", self.on_element_clicked_by_canvas)
 
         # Initialize Text widget
         self.dtv = DraggableTreeview(self.paned_window)
@@ -39,9 +40,11 @@ class PDFViewer(tk.Frame):
         self.paned_window.sashpos(0, 600)
 
     def add_elements_to_treeview(self):
+        self.dtv.delete_all_items()
+
         for key, element in self.pdf.iter_elements():
             tags = ()
-            if not element.safe:
+            if not element.safe or not element.visible:
                 tags += ("unsafe",)
             if element.page_number % 2 == 0:
                 tags += ("oddpage",)
@@ -50,15 +53,23 @@ class PDFViewer(tk.Frame):
 
     def on_treeview_select(self, event):
         # Get the selected item
-        selected_item = self.dtv.selection()[0]
+        selection = self.dtv.selection()
+        if selection:
+            selected_item = selection[0]
 
-        # Extract the page number from the selected item
-        page_number, _ = self.dtv.item(selected_item, "values")
+            # Extract the page number from the selected item
+            page_number, _ = self.dtv.item(selected_item, "values")
 
-        self.canvas.change_page(int(page_number) - 1)
+            self.canvas.change_page(int(page_number) - 1)
 
-    def on_safe_area_changed(self, event):
-        for item in self.dtv.get_children():
-            self.dtv.delete(item)
+    def on_safe_area_changed_by_canvas(self, event):
+        new_safe_margin = self.canvas.get_new_safe_margin()
+        self.pdf.set_safe_margin(new_safe_margin)
+        self.canvas.redraw()
+        self.add_elements_to_treeview()
 
+    def on_element_clicked_by_canvas(self, event):
+        key = self.canvas.get_clicked_element()
+        self.pdf.toggle_visibility(key)
+        self.canvas.redraw()
         self.add_elements_to_treeview()

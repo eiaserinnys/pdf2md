@@ -1,5 +1,6 @@
 import fitz  # PyMuPDF
 from dataclasses import dataclass
+import pdfplumber
 from pdfminer.layout import LAParams, LTTextBox, LTImage, LTFigure
 from pdfminer.high_level import extract_pages
 from src.utility import check_overlap
@@ -17,6 +18,7 @@ class PdfElement:
     bbox: PdfRect
     text: str
     safe: bool
+    visible: bool
 
 class Pdf:
     def __init__(self, pdf_path):
@@ -33,6 +35,13 @@ class Pdf:
             all_texts = False)
 
         self.pdfminer_pages = list(extract_pages(pdf_path, laparams = params))
+
+        # self.pdfplumber = pdfplumber.open(pdf_path)
+
+        # for page in self.pdfplumber.pages:
+        #     tables = page.find_tables()
+        #     for table in tables:
+        #         print(table.bbox.x0, table.bbox.y0, table.bbox.x1, table.bbox.y1)
 
         self.margin = PdfRect(0.15, 0.08, 0.85, 0.92)
 
@@ -59,14 +68,18 @@ class Pdf:
                     text = text.replace("-\n", "")
                     text = text.replace("\n", " ")
                     text = text.strip()
-                    self.elements[index] = PdfElement(page_number + 1, element.bbox, text, overlap)
+                    self.elements[index] = PdfElement(page_number + 1, element.bbox, text, overlap, True)
                     index += 1
                 elif isinstance(element, LTFigure):
-                    self.elements[index] = PdfElement(page_number + 1, element.bbox, "figure", overlap)
+                    self.elements[index] = PdfElement(page_number + 1, element.bbox, "figure", overlap, True)
                     index += 1
                 elif isinstance(element, LTImage):
-                    self.elements[index] = PdfElement(page_number + 1, element.bbox, "image", overlap)
+                    self.elements[index] = PdfElement(page_number + 1, element.bbox, "image", overlap, True)
                     index += 1
+
+    def toggle_visibility(self, key):
+        if key in self.elements:
+            self.elements[key].visible = not self.elements[key].visible
 
     def iter_elements(self):
         """Generator method to iterate over elements safely."""

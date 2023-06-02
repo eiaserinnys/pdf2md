@@ -20,6 +20,10 @@ class DraggableTreeview(ttk.Treeview):
         self.bind("<ButtonRelease-1>", self.on_drag_release)
         self._drag_data = {"item": None, "y": 0}
 
+    def delete_all_items(self):
+        for item in self.get_children():
+            self.delete(item)
+
     def on_drag_start(self, event):
         """Beginning drag of an object"""
         # record the item's initial position
