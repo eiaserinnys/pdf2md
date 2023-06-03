@@ -1,4 +1,5 @@
 import tkinter as tk
+from src.pdf_viewer_toolbar_item import PdfViewerToolbarItem
 
 class PdfViewerToolbar(tk.Frame):
     def __init__(self, parent):
@@ -6,26 +7,31 @@ class PdfViewerToolbar(tk.Frame):
         self.pack(side=tk.TOP, fill=tk.X)
 
         self.buttons = {}
-        self.add_button("Safe Area")
-        self.add_button("Visibility")
-        self.add_button("Merge & Split")
-        self.add_button("Order")
+        for item in PdfViewerToolbarItem:
+            self.add_button(item)
 
-        self.button_states = {name: False for name in self.buttons}
+        self.button_states = {item: False for item in self.buttons}
 
-        self.toggle_button("Safe Area")
+        self.current_selection = None
 
-    def add_button(self, name):
-        self.buttons[name] = tk.Button(self, text=name, command=lambda: self.toggle_button(name))
-        self.buttons[name].pack(side='left', padx=2, pady=2)
+    def add_button(self, item):
+        self.buttons[item] = tk.Button(self, text=item.display_name, command=lambda item=item: self.toggle_button(item))
+        self.buttons[item].pack(side='left', padx=2, pady=2)
 
-    def toggle_button(self, name):
+    def toggle_button(self, item):
         # Reset all buttons
-        for button_name, button_state in self.button_states.items():
-            self.button_states[button_name] = False
-            self.buttons[button_name].config(relief=tk.RAISED)
+        for button_item, button_state in self.button_states.items():
+            self.button_states[button_item] = False
+            self.buttons[button_item].config(relief=tk.RAISED)
 
         # Toggle the clicked button
-        self.button_states[name] = not self.button_states[name]
-        if self.button_states[name]:
-            self.buttons[name].config(relief=tk.SUNKEN)
+        self.button_states[item] = not self.button_states[item]
+        if self.button_states[item]:
+            self.buttons[item].config(relief=tk.SUNKEN)
+
+        self.current_selection = item
+
+        self.event_generate("<<ToolbarButtonClicked>>", when="tail")
+
+    def get_current_selection(self):
+        return self.current_selection

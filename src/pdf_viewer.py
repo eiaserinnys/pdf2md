@@ -6,6 +6,7 @@ from src.pdf import Pdf
 from src.pdf_canvas import PdfCanvas
 from src.utility import check_overlap
 from src.pdf_viewer_toolbar import PdfViewerToolbar
+from src.pdf_viewer_toolbar_item import PdfViewerToolbarItem
 
 class PDFViewer(tk.Frame):
     def __init__(self, pdf_path, master=None):
@@ -18,6 +19,7 @@ class PDFViewer(tk.Frame):
 
         # Create toolbar
         self.toolbar = PdfViewerToolbar(self)
+        self.toolbar.bind("<<ToolbarButtonClicked>>", self.on_toolbar_button_clicked)
 
         # Create a PanedWindow with horizontal orientation
         self.paned_window = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
@@ -44,9 +46,8 @@ class PDFViewer(tk.Frame):
         self.paned_window.update()
         self.paned_window.sashpos(0, 600)
 
-    def on_button_click(self):
-        # define what should happen when the button is clicked
-        pass
+        # Apply initial tool selection
+        self.toolbar.toggle_button(PdfViewerToolbarItem.SafeArea)
 
     def add_elements_to_treeview(self):
         self.dtv.delete_all_items()
@@ -72,19 +73,27 @@ class PDFViewer(tk.Frame):
             self.canvas.change_page(int(page_number) - 1)
 
     def on_safe_area_changed_by_canvas(self, event):
+        if self.toolbar.get_current_selection() != PdfViewerToolbarItem.SafeArea:
+            return
+        
         new_safe_margin = self.canvas.get_new_safe_margin()
         self.pdf.set_safe_margin(new_safe_margin)
         self.canvas.redraw()
         self.add_elements_to_treeview()
 
     def on_element_left_clicked_by_canvas(self, event):
-        key = self.canvas.get_clicked_element()
-        self.pdf.toggle_visibility(key)
-        self.canvas.redraw()
-        self.add_elements_to_treeview()
+        if self.toolbar.get_current_selection() == PdfViewerToolbarItem.Visibility:
+            key = self.canvas.get_clicked_element()
+            self.pdf.toggle_visibility(key)
+            self.canvas.redraw()
+            self.add_elements_to_treeview()
 
     def on_element_right_clicked_by_canvas(self, event):
-        key = self.canvas.get_clicked_element()
-        self.pdf.split_element(key)
-        self.canvas.redraw()
-        self.add_elements_to_treeview()
+        if self.toolbar.get_current_selection() == PdfViewerToolbarItem.MergeAndSplit:
+            key = self.canvas.get_clicked_element()
+            self.pdf.split_element(key)
+            self.canvas.redraw()
+            self.add_elements_to_treeview()
+
+    def on_toolbar_button_clicked(self, event):
+        self.canvas.change_mode(self.toolbar.get_current_selection())

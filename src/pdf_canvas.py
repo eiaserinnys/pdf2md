@@ -2,6 +2,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 from src.draggable_rectangle import DraggableRectangle
 from src.pdf import PdfRect
+from src.pdf_viewer_toolbar_item import PdfViewerToolbarItem
 
 class PdfCanvas(tk.Canvas):
     def __init__(self, master=None, pdf=None, **kwargs):
@@ -25,10 +26,16 @@ class PdfCanvas(tk.Canvas):
         self.current_page = 0
         self.elements = []
 
+        self.mode = None
+
     def change_page(self, new_page_number):
         if new_page_number >= 0 and new_page_number < self.pdf.get_page_number():
             self.current_page = new_page_number
             self.redraw()
+
+    def change_mode(self, new_mode):
+        self.mode = new_mode
+        self.redraw()
    
     def on_mouse_wheel(self, event):
         """Handle mouse wheel scrolling."""
@@ -94,7 +101,7 @@ class PdfCanvas(tk.Canvas):
                 self.itemconfig(image_id, state='hidden')  # hide image
 
     def clear(self):
-        if hasattr(self, 'safe_area'):
+        if hasattr(self, 'safe_area') and self.safe_area is not None:
             self.safe_area.delete()
             self.safe_area = None
         self.delete('all')  # delete all canvas items
@@ -122,15 +129,31 @@ class PdfCanvas(tk.Canvas):
     def create_element(self, key, index, safe, visible, x1, y1, x2, y2):
 
         width = 1
+        dash = None
 
-        if safe:
-            if visible:
-                outline = fill = 'green'
-                width = 2
-            else:
+        if self.mode == PdfViewerToolbarItem.SafeArea:
+            if safe:
                 outline = fill = 'black'
+            else:
+                outline = fill = 'gray80'
+                dash = (5, 3)
         else:
-            outline = fill = 'gray80'
+            if safe:
+                if visible:
+                    outline = fill = 'green'
+                    width = 2
+                else:
+                    outline = fill = 'black'
+                    dash = (5, 3)
+            else:
+                outline = fill = 'gray80'
+                dash = (5, 3)
+
+        # Add text at the top left corner inside the rectangle.
+        if safe and visible:
+            text_id = self.create_text(x1 - 5 - width/2, y1 - width/2, text=str(index), anchor='ne', fill='white')  # Place the text 5 pixels away from the top left corner.
+            text_bg = self.create_rectangle(self.bbox(text_id), fill=fill)
+            self.tag_lower(text_bg, text_id)
 
         alpha = int(0.25 * 255)
         fill = self.winfo_rgb(fill) + (alpha,)
@@ -140,14 +163,11 @@ class PdfCanvas(tk.Canvas):
         image_id = self.create_image(x1, y1, image=image, anchor='nw')
         self.itemconfig(image_id, state='hidden')  # initially hide the image
 
+        # create rectangle
         kwargs = { 'outline': outline, 'width': width }
+        if dash is not None:
+            kwargs.update({ 'dash': dash })
         rectangle = super().create_rectangle(x1, y1, x2, y2, **kwargs)
-
-        # Add text at the top left corner inside the rectangle.
-        if safe and visible:
-            text_id = self.create_text(x1 - 5 - width/2, y1 - width/2, text=str(index), anchor='ne', fill='white')  # Place the text 5 pixels away from the top left corner.
-            text_bg = self.create_rectangle(self.bbox(text_id), fill="green")
-            self.tag_lower(text_bg, text_id)
 
         self.elements.append((key, rectangle, image_id, image))
         return rectangle
@@ -192,7 +212,11 @@ class PdfCanvas(tk.Canvas):
         safe_x2 = self.scale_factor_x * page_width * safe_margin.x2
         safe_y1 = self.scale_factor_y * page_height * safe_margin.y1
         safe_y2 = self.scale_factor_y * page_height * safe_margin.y2
-        self.safe_area = DraggableRectangle(self, safe_x1, safe_y1, safe_x2, safe_y2, outline="red")
+
+        if self.mode == PdfViewerToolbarItem.SafeArea:
+            self.safe_area = DraggableRectangle(self, safe_x1, safe_y1, safe_x2, safe_y2, outline="red", width=2, dash=(5, 3))
+        else:
+            self.create_rectangle(safe_x1, safe_y1, safe_x2, safe_y2, outline="gray40", dash=(5, 3))
 
     def on_drag_end(self, event):
         # Update the safe_margin based on the new position of safe_area
