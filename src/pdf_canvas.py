@@ -3,6 +3,8 @@ from PIL import Image, ImageTk
 from src.draggable_rectangle import DraggableRectangle
 from src.pdf import PdfRect
 from src.pdf_viewer_toolbar_item import PdfViewerToolbarItem
+from src.element_setting import get_setting
+from src.utility import check_overlap, get_image_extent
 
 class PdfCanvas(tk.Canvas):
     def __init__(self, master=None, pdf=None, **kwargs):
@@ -15,18 +17,24 @@ class PdfCanvas(tk.Canvas):
         self.bind("<Button-1>", self.on_mouse_lb_down)
         self.bind("<Button-3>", self.on_mouse_rb_down)
 
+        self.drag_data = {"x": 0, "y": 0, "item": None}
+        self.bind("<ButtonPress-1>", self.on_drag_start)
+        self.bind("<B1-Motion>", self.on_drag_motion)
+        self.bind("<ButtonRelease-1>", self.on_drag_stop)
+
         # bind mouse wheel events
         self.bind("<MouseWheel>", self.on_mouse_wheel)  # Windows
         self.bind("<Button-4>", self.on_scroll_up)      # linux
         self.bind("<Button-5>", self.on_scroll_down)    # linux
 
         # bind drag events
-        self.bind("<<SafeAreaDragEnd>>", self.on_drag_end)
+        self.bind("<<SafeAreaDragEnd>>", self.on_safe_area_drag_end)
 
         self.current_page = 0
         self.elements = []
 
         self.mode = None
+        self.drag_enabled = False
 
     def change_page(self, new_page_number):
         if new_page_number >= 0 and new_page_number < self.pdf.get_page_number():
@@ -35,6 +43,10 @@ class PdfCanvas(tk.Canvas):
 
     def change_mode(self, new_mode):
         self.mode = new_mode
+        if self.mode == PdfViewerToolbarItem.Visibility:
+            self.drag_enabled = True
+        else:
+            self.drag_enabled = False
         self.redraw()
    
     def on_mouse_wheel(self, event):
@@ -66,6 +78,76 @@ class PdfCanvas(tk.Canvas):
         x1, y1, x2, y2 = self.coords(rectangle)
         return x1 <= x <= x2 and y1 <= y <= y2
 
+    def on_drag_start(self, event):
+        """Begining drag of an object"""
+        if self.drag_enabled:
+            # record the item and its location
+            self.drag_data["item"] = None   # we do not consider it as drag until the mouse is moved
+            self.drag_data["x"] = event.x
+            self.drag_data["y"] = event.y
+
+    def on_drag_motion(self, event):
+        """Handle dragging of an object"""
+        if self.drag_enabled:
+            # compute how much the mouse has moved
+            delta_x = event.x - self.drag_data["x"]
+            delta_y = event.y - self.drag_data["y"]
+            
+            if self.drag_data["item"] is None:
+                # now we begin drag
+                self.drag_data["item"] = self.create_rectangle(
+                    self.canvasx(event.x), self.canvasy(event.y), 
+                    self.canvasx(event.x) + delta_x, self.canvasy(event.y) + delta_y, 
+                    outline="green",
+                    dash = (5, 3))
+            else:
+                self.coords(
+                    self.drag_data["item"], 
+                    self.canvasx(self.drag_data["x"]), self.canvasy(self.drag_data["y"]), 
+                    self.canvasx(self.drag_data["x"]) + delta_x, self.canvasy(self.drag_data["y"]) + delta_y)
+
+            self.update_drag_overlap()
+
+    def on_drag_stop(self, event):
+        """End drag of an object"""
+        if self.drag_enabled:
+            if self.drag_data["item"] is not None:
+                # drag is finished, so we need to update the drag overlap
+                self.update_drag_overlap()
+                self.event_generate("<<DragEnd>>")
+                self.delete(self.drag_data["item"])
+            else:
+                # mouse is not moved, so it is a click
+                x, y = self.canvasx(event.x), self.canvasy(event.y)
+                for key, rectangle, _, _ in self.elements:
+                    if self.is_inside_rectangle(x, y, rectangle):
+                        self.clicked_element = key
+                        self.event_generate("<<ElementLeftClicked>>")
+
+                        # self.elements will be changed by <<ElementLeftClicked>> event, so we need to break here
+                        break
+
+            # reset the drag information
+            self.drag_data["item"] = None
+            self.drag_data["x"] = 0
+            self.drag_data["y"] = 0
+
+    def update_drag_overlap(self):
+        self.selected_elements = []
+
+        if self.drag_data["item"] is not None:
+            drag_rect = self.coords(self.drag_data["item"])
+            for key, rectangle, image_id, _ in self.elements:
+                element_rect = self.coords(rectangle)
+                if check_overlap(drag_rect, element_rect):
+                    self.itemconfig(image_id, state='normal')  # show image
+                    self.selected_elements.append(key)
+                else:
+                    self.itemconfig(image_id, state='hidden')  # hide image
+        else:
+            for _, rectangle, image_id, _ in self.elements:
+                self.itemconfig(image_id, state='hidden')  # hide image
+
     def on_mouse_lb_down(self, event):
         """Handle mouse moving over the canvas."""
         x, y = self.canvasx(event.x), self.canvasy(event.y)
@@ -90,6 +172,9 @@ class PdfCanvas(tk.Canvas):
 
     def get_clicked_element(self):
         return self.clicked_element
+    
+    def get_selected_elements(self):
+        return self.selected_elements
 
     def on_mouse_move(self, event):
         """Handle mouse moving over the canvas."""
@@ -108,46 +193,14 @@ class PdfCanvas(tk.Canvas):
         self.elements = []  # clear rectangles list
         self.photoimg = None
 
-    def get_image_extent(self, pix):
-        window_width = max(self.winfo_width(), 1)  # ensure width is at least 1
-        window_height = max(self.winfo_height(), 1)  # ensure height is at least 1
-
-        window_ratio = window_width / window_height
-        page_ratio = pix.width / pix.height
-
-        if window_ratio < page_ratio:
-            # Window is relatively taller than the page, so scale based on width
-            new_width = window_width
-            new_height = max(int(window_width / page_ratio), 1)  # ensure height is at least 1
-        else:
-            # Window is relatively wider than the page, so scale based on height
-            new_height = window_height
-            new_width = max(int(window_height * page_ratio), 1)  # ensure width is at least 1
-
-        return new_width, new_height
-
+    # Using the table:
     def create_element(self, key, index, safe, visible, x1, y1, x2, y2):
 
-        width = 1
-        dash = None
-
-        if self.mode == PdfViewerToolbarItem.SafeArea:
-            if safe:
-                outline = fill = 'black'
-            else:
-                outline = fill = 'gray80'
-                dash = (5, 3)
-        else:
-            if safe:
-                if visible:
-                    outline = fill = 'green'
-                    width = 2
-                else:
-                    outline = fill = 'black'
-                    dash = (5, 3)
-            else:
-                outline = fill = 'gray80'
-                dash = (5, 3)
+        settings = get_setting(self.mode, safe, visible)
+        outline = settings['outline']
+        fill = settings['fill']
+        dash = settings.get('dash')
+        width = settings.get('width')
 
         # Add text at the top left corner inside the rectangle.
         if safe and visible:
@@ -177,7 +230,7 @@ class PdfCanvas(tk.Canvas):
 
         # Convert the PyMuPDF page to PIL Image and resize to fit window
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-        img = img.resize((self.get_image_extent(pix)), Image.LANCZOS)
+        img = img.resize((get_image_extent(self, pix)), Image.LANCZOS)
 
         # Convert the PIL Image to PhotoImage and show it on the Canvas
         self.photoimg = ImageTk.PhotoImage(img)
@@ -218,7 +271,7 @@ class PdfCanvas(tk.Canvas):
         else:
             self.create_rectangle(safe_x1, safe_y1, safe_x2, safe_y2, outline="gray40", dash=(5, 3))
 
-    def on_drag_end(self, event):
+    def on_safe_area_drag_end(self, event):
         # Update the safe_margin based on the new position of safe_area
         x1, y1, x2, y2 = self.coords(self.safe_area.rectangle)
         page_width, page_height = self.pdf.get_page_extent(self.current_page)
