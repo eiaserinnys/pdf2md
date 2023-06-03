@@ -28,6 +28,7 @@ class PdfElement:
     text: str
     safe: bool
     visible: bool
+    children = None
 
 class Pdf:
     def __init__(self, pdf_path):
@@ -74,8 +75,21 @@ class Pdf:
                     text = text.replace("-\n", "")
                     text = text.replace("\n", " ")
                     text = text.strip()
-                    cur_page.append(self.index, PdfElement(page_number + 1, element, element.bbox, text, True, True))
+
+                    new_element = PdfElement(page_number + 1, element, element.bbox, text, True, True)
+                    cur_page.append(self.index, new_element)
                     self.index += 1
+
+                    new_element.children = []
+
+                    for line in element:
+                        text = line.get_text()
+                        text = text.replace("-\n", "")
+                        text = text.replace("\n", " ")
+                        text = text.strip()
+                        new_element.children.append((self.index, PdfElement(page_number + 1, line, line.bbox, text, True, True)))
+                        self.index += 1
+
                 elif isinstance(element, LTFigure):
                     cur_page.append(self.index, PdfElement(page_number + 1, element, element.bbox, "figure", True, True))
                     self.index += 1
@@ -105,19 +119,11 @@ class Pdf:
         for page in self.pages:
             for i, (key, element) in enumerate(page.elements):
                 if key == key_to_split:
-                    if element.element and isinstance(element.element, LTTextBox):
-                        split_elements = []  # list to hold new elements
-                        for line in element.element:
-                            text = line.get_text()
-                            text = text.replace("-\n", "")
-                            text = text.replace("\n", " ")
-                            text = text.strip()
-                            split_elements.append((self.index, PdfElement(element.page_number, line, line.bbox, text, True, True)))
-                            self.index += 1
+                    if element.children != None and len(element.children) > 1:
                         # remove the original element
                         page.elements.pop(i)
                         # insert new elements at the same position
-                        for j, new_element in enumerate(split_elements):
+                        for j, new_element in enumerate(element.children):
                             page.elements.insert(i + j, new_element)
                         break
 
