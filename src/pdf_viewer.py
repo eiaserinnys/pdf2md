@@ -89,6 +89,11 @@ class PDFViewer(tk.Frame):
                 self.pdf.toggle_visibility(key)
             self.canvas.redraw()
             self.add_elements_to_treeview()
+        elif self.toolbar.get_current_selection() == PdfViewerToolbarItem.MergeAndSplit:
+            elements = self.canvas.get_selected_elements()
+            self.pdf.merge(self.canvas.get_current_page(), elements)
+            self.canvas.redraw()
+            self.add_elements_to_treeview()
 
     def on_element_left_clicked_by_canvas(self, event):
         if self.toolbar.get_current_selection() == PdfViewerToolbarItem.Visibility:

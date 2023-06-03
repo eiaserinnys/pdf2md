@@ -39,9 +39,12 @@ class PdfCanvas(tk.Canvas):
             self.current_page = new_page_number
             self.redraw()
 
+    def get_current_page(self):
+        return self.current_page
+
     def change_mode(self, new_mode):
         self.mode = new_mode
-        if self.mode == PdfViewerToolbarItem.Visibility:
+        if self.mode == PdfViewerToolbarItem.Visibility or self.mode == PdfViewerToolbarItem.MergeAndSplit:
             self.drag_enabled = True
         else:
             self.drag_enabled = False

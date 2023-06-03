@@ -20,15 +20,21 @@ class PdfRect:
     x2: float
     y2: float
 
+    def as_tuple(self):
+        return self.x1, self.y1, self.x2, self.y2    
+
 @dataclass
 class PdfElement:
     page_number: int
     element: object
     bbox: PdfRect
+    org_text: str
     text: str
+    mergable: bool
     safe: bool
     visible: bool
     children = None
+    marked: bool = False
 
 class Pdf:
     def __init__(self, pdf_path):
@@ -76,7 +82,7 @@ class Pdf:
                     text = text.replace("\n", " ")
                     text = text.strip()
 
-                    new_element = PdfElement(page_number + 1, element, element.bbox, text, True, True)
+                    new_element = PdfElement(page_number + 1, element, element.bbox, element.get_text(), text, True, True, True)
                     cur_page.append(self.index, new_element)
                     self.index += 1
 
@@ -87,15 +93,69 @@ class Pdf:
                         text = text.replace("-\n", "")
                         text = text.replace("\n", " ")
                         text = text.strip()
-                        new_element.children.append((self.index, PdfElement(page_number + 1, line, line.bbox, text, True, True)))
+
+                        new_element.children.append((self.index, PdfElement(page_number + 1, line, line.bbox, line.get_text(), text, True, True, True)))
                         self.index += 1
 
                 elif isinstance(element, LTFigure):
-                    cur_page.append(self.index, PdfElement(page_number + 1, element, element.bbox, "figure", True, True))
+                    cur_page.append(self.index, PdfElement(page_number + 1, element, element.bbox, "figure", "figure", False, True, True))
                     self.index += 1
                 elif isinstance(element, LTImage):
-                    cur_page.append(self.index, PdfElement(page_number + 1, element, element.bbox, "image", True, True))
+                    cur_page.append(self.index, PdfElement(page_number + 1, element, element.bbox, "image", "image", False, True, True))
                     self.index += 1
+
+    def merge(self, page_number, key_list):
+        if key_list is None or len(key_list) <= 0:
+            return
+
+        page = self.pages[page_number]
+        insert_position = None
+      
+        # find elements to merge
+        to_merge = []
+        for k in key_list:
+            for i, (key, element) in enumerate(page.elements):
+                if key == k:
+                    if element.safe and element.visible and element.mergable:
+                        if insert_position is None or i < insert_position:
+                            insert_position = i
+                        to_merge.append((key, element))
+
+        if len(to_merge) < 2:
+            return
+
+        # mark elements to remove
+        for _, e in to_merge:
+            e.marked = True
+
+        # create merged element
+        merged_org_text = ''.join([el[1].org_text for el in to_merge])
+        text = merged_org_text.replace("-\n", "")
+        text = text.replace("\n", " ")
+        text = text.strip()
+
+        merged_bbox = (
+            min(el[1].bbox[0] for el in to_merge),
+            min(el[1].bbox[1] for el in to_merge),
+            max(el[1].bbox[2] for el in to_merge),
+            max(el[1].bbox[3] for el in to_merge))
+
+        merged_element = PdfElement(page.page_number, None, merged_bbox, merged_org_text, text, True, True, True)
+        merged_element.children = to_merge
+        page.elements.insert(insert_position, (self.index, merged_element))
+        self.index += 1
+
+        # removed marked elements
+        new_elements = []
+        for element in page.elements:
+            if element[1].marked:
+                continue
+            new_elements.append(element)
+        page.elements = new_elements
+
+        # reset marked
+        for _, e in to_merge:
+            e.marked = False
 
     def recalculate_safe_area(self):
         for page in self.pages:
