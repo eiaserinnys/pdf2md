@@ -7,13 +7,13 @@ from src.toolbar.pdf_viewer_toolbar import PdfViewerToolbar
 from src.toolbar.pdf_viewer_toolbar_item import PdfViewerToolbarItem
 
 class PDFViewer(tk.Frame):
-    def __init__(self, pdf_path, master=None):
+    def __init__(self, pdf_path, intm_path, master=None):
         super().__init__(master)
         self.master = master
         self.pack(fill='both', expand=1)
 
         # Load the PDF with PyMuPDF and pdfminer
-        self.pdf = Pdf(pdf_path)
+        self.pdf = Pdf(pdf_path, intm_path)
 
         # Create toolbar
         self.toolbar = PdfViewerToolbar(self)
@@ -88,65 +88,64 @@ class PDFViewer(tk.Frame):
     def on_page_changed_by_canvas(self, event):
         self.add_elements_to_text_widget()
 
+    def redraw(self):
+        self.canvas.redraw()
+        self.add_elements_to_text_widget()
+
     def on_safe_area_changed_by_canvas(self, event):
         if self.toolbar.get_current_selection() != PdfViewerToolbarItem.SafeArea:
             return
         
         new_safe_margin = self.canvas.get_new_safe_margin()
         self.pdf.set_safe_margin(new_safe_margin)
-        self.canvas.redraw()
-        self.add_elements_to_text_widget()
+        self.pdf.save()
+        self.redraw()
 
     def on_drag_end_by_canvas(self, event):
         if self.toolbar.get_current_selection() == PdfViewerToolbarItem.Visibility:
-            elements = self.canvas.get_selected_elements()
-            for key in elements:
+            for key in self.canvas.get_selected_elements():
                 self.pdf.toggle_visibility(key)
-            self.canvas.redraw()
-            self.add_elements_to_text_widget()
+            self.pdf.save()
+            self.redraw()
         elif self.toolbar.get_current_selection() == PdfViewerToolbarItem.MergeAndSplit:
             elements = self.canvas.get_selected_elements()
             self.pdf.merge(self.canvas.get_current_page(), elements)
-            self.canvas.redraw()
-            self.add_elements_to_text_widget()
+            self.pdf.save()
+            self.redraw()
 
     def on_element_left_clicked_by_canvas(self, event):
         if self.toolbar.get_current_selection() == PdfViewerToolbarItem.Visibility:
             key = self.canvas.get_clicked_element()
             self.pdf.toggle_visibility(key)
-            self.canvas.redraw()
-            self.add_elements_to_text_widget()
+            self.pdf.save()
+            self.redraw()
         elif self.toolbar.get_current_selection() == PdfViewerToolbarItem.Order:
             key = self.canvas.get_clicked_element()
             if self.canvas.get_pivot() is None:
                 element = self.pdf.get_element_in_page(self.canvas.get_current_page(), key)
                 if element is not None and element.safe and element.visible:
                     self.canvas.set_pivot(key)
-                    self.canvas.redraw()
+                    self.redraw()   # we don't need to update the text widget, but want to make it consistent with the other codes
             else:
                 if self.pdf.move_element(self.canvas.get_pivot(), key, self.canvas.get_current_page(), "after"):
+                    self.pdf.save()
                     self.canvas.set_pivot(key)
-                    self.canvas.redraw()
-                    self.add_elements_to_text_widget()
+                    self.redraw()
         elif self.toolbar.get_current_selection() == PdfViewerToolbarItem.Concat:
-            key = self.canvas.get_clicked_element()
-            self.pdf.toggle_concat(key)
-            self.canvas.redraw()
-            self.add_elements_to_text_widget()
+            self.pdf.toggle_concat(self.canvas.get_clicked_element())
+            self.pdf.save()
+            self.redraw()
 
     def on_element_right_clicked_by_canvas(self, event):
         if self.toolbar.get_current_selection() == PdfViewerToolbarItem.MergeAndSplit:
-            key = self.canvas.get_clicked_element()
-            self.pdf.split_element(key)
-            self.canvas.redraw()
-            self.add_elements_to_text_widget()
+            self.pdf.split_element(self.canvas.get_clicked_element())
+            self.pdf.save()
+            self.redraw()
         elif self.toolbar.get_current_selection() == PdfViewerToolbarItem.Order:
-            key = self.canvas.get_clicked_element()
-            if self.canvas.get_pivot() is not None:
-                if self.pdf.move_element(self.canvas.get_pivot(), key, self.canvas.get_current_page(), "before"):
-                    self.canvas.set_pivot(key)
-                    self.canvas.redraw()
-                    self.add_elements_to_text_widget()
+            if self.pdf.move_element(self.canvas.get_pivot(), self.canvas.get_clicked_element(), self.canvas.get_current_page(), "before"):
+                self.pdf.save()
+                self.canvas.set_pivot(self.canvas.get_clicked_element())
+                self.redraw()
 
     def on_toolbar_button_clicked(self, event):
         self.canvas.change_mode(self.toolbar.get_current_selection())

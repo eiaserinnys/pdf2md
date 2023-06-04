@@ -7,10 +7,12 @@ async def main():
     root.title("pdf2md")
     root.geometry('1200x800')  # set initial window size
 
-    #path_name = './example/voyager.pdf'
-    path_name = './example/1751-0473-7-7.pdf'
+    path_name = './example/voyager.pdf'
+    intm_name = "./cache/voyager.context"
+    # path_name = './example/1751-0473-7-7.pdf'
+    # intm_name = './cache/1751-0473-7-7.context'
 
-    app = PDFViewer(path_name, master=root)
+    app = PDFViewer(path_name, intm_name, master=root)
     app.mainloop()
 
 if __name__ == "__main__":
