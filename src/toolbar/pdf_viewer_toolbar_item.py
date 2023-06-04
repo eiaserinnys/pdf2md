@@ -5,6 +5,7 @@ class PdfViewerToolbarItem(Enum):
     Visibility = auto(), "Visibility"
     MergeAndSplit = auto(), "Merge & Split"
     Order = auto(), "Order"
+    Concat = auto(), "Link Next"
 
     # Override the __new__ method to store the display name in addition to the default Enum value
     def __new__(cls, value, display_name):

@@ -18,6 +18,8 @@ class PDFViewer(tk.Frame):
         # Create toolbar
         self.toolbar = PdfViewerToolbar(self)
         self.toolbar.bind("<<ToolbarButtonClicked>>", self.on_toolbar_button_clicked)
+        for i in range(1, 6):
+            self.master.bind(str(i), self.toolbar.key_press)
 
         # Create a PanedWindow with horizontal orientation
         self.paned_window = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
@@ -55,7 +57,10 @@ class PDFViewer(tk.Frame):
         for key, element in self.pdf.iter_elements_page(self.canvas.get_current_page()):
             if not element.safe or not element.visible:
                 continue  # Skip unsafe or invisible elements
-            self.text_widget.insert(tk.END, f'{element.text}\n')
+            if element.concat:
+                self.text_widget.insert(tk.END, f'{element.text} ')
+            else:
+                self.text_widget.insert(tk.END, f'{element.text}\n')
 
     def add_elements_to_treeview(self):
         self.dtv.delete_all_items()
@@ -123,6 +128,11 @@ class PDFViewer(tk.Frame):
                     self.canvas.set_pivot(key)
                     self.canvas.redraw()
                     self.add_elements_to_text_widget()
+        elif self.toolbar.get_current_selection() == PdfViewerToolbarItem.Concat:
+            key = self.canvas.get_clicked_element()
+            self.pdf.toggle_concat(key)
+            self.canvas.redraw()
+            self.add_elements_to_text_widget()
 
     def on_element_right_clicked_by_canvas(self, event):
         if self.toolbar.get_current_selection() == PdfViewerToolbarItem.MergeAndSplit:

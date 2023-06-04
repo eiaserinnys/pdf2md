@@ -14,6 +14,15 @@ class PdfViewerToolbar(tk.Frame):
 
         self.current_selection = None
 
+        # Enum 항목을 리스트로 만듭니다.
+        self.items = list(PdfViewerToolbarItem)
+
+    def key_press(self, event):
+        if event.char.isdigit():
+            index = int(event.char) - 1  # 인덱스는 0부터 시작하므로 1을 뺍니다.
+            if 0 <= index < len(self.items):  # 인덱스가 유효한지 확인합니다.
+                self.toggle_button(self.items[index])  # 해당 항목을 가져와서 전환합니다.
+
     def add_button(self, item):
         self.buttons[item] = tk.Button(self, text=item.display_name, command=lambda item=item: self.toggle_button(item))
         self.buttons[item].pack(side='left', padx=2, pady=2)

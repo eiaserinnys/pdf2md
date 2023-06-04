@@ -93,6 +93,7 @@ class PdfCanvas(tk.Canvas):
 
         #for element in pdfminer_page:
         index = 1
+        prev_element = self.pdf.get_last_element_in_page(self.current_page - 1)
         for key, element in elements:
             x1, y1, x2, y2 = element.bbox
             x1, x2 = sorted([x1 * self.scale_factor_x, x2 * self.scale_factor_x])
@@ -107,6 +108,8 @@ class PdfCanvas(tk.Canvas):
                 option = element.can_be_split()
             elif self.mode == PdfViewerToolbarItem.Order:
                 option = key == self.pivot
+            elif self.mode == PdfViewerToolbarItem.Concat:
+                option = 1 if element.concat else 2 if prev_element is not None and prev_element.concat else 0
 
             self.elm.add_element(
                 self.mode, 
@@ -119,6 +122,9 @@ class PdfCanvas(tk.Canvas):
             
             if element.visible and element.safe:
                 index += 1
+
+            if element.safe and element.visible:
+                prev_element = element
 
         safe_x1 = self.scale_factor_x * page_width * safe_margin.x1
         safe_x2 = self.scale_factor_x * page_width * safe_margin.x2

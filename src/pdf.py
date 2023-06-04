@@ -26,7 +26,6 @@ class PdfRect:
 @dataclass
 class PdfElement:
     page_number: int
-    element: object
     bbox: PdfRect
     org_text: str
     text: str
@@ -34,6 +33,7 @@ class PdfElement:
     safe: bool
     visible: bool
     children = None
+    concat: bool = False
     marked: bool = False
 
     def can_be_split(self):
@@ -85,7 +85,7 @@ class Pdf:
                     text = text.replace("\n", " ")
                     text = text.strip()
 
-                    new_element = PdfElement(page_number + 1, element, element.bbox, element.get_text(), text, True, True, True)
+                    new_element = PdfElement(page_number + 1, element.bbox, element.get_text(), text, True, True, True)
                     cur_page.append(self.index, new_element)
                     self.index += 1
 
@@ -97,14 +97,14 @@ class Pdf:
                         text = text.replace("\n", " ")
                         text = text.strip()
 
-                        new_element.children.append((self.index, PdfElement(page_number + 1, line, line.bbox, line.get_text(), text, True, True, True)))
+                        new_element.children.append((self.index, PdfElement(page_number + 1, line.bbox, line.get_text(), text, True, True, True)))
                         self.index += 1
 
                 elif isinstance(element, LTFigure):
-                    cur_page.append(self.index, PdfElement(page_number + 1, element, element.bbox, "<<<figure>>>", "<<<figure>>>", False, True, True))
+                    cur_page.append(self.index, PdfElement(page_number + 1, element.bbox, "<<<figure>>>", "<<<figure>>>", False, True, True))
                     self.index += 1
                 elif isinstance(element, LTImage):
-                    cur_page.append(self.index, PdfElement(page_number + 1, element, element.bbox, "<<<image>>>", "<<<image>>>", False, True, True))
+                    cur_page.append(self.index, PdfElement(page_number + 1, element.bbox, "<<<image>>>", "<<<image>>>", False, True, True))
                     self.index += 1
 
     def merge(self, page_number, key_list):
@@ -143,7 +143,7 @@ class Pdf:
             max(el[1].bbox[2] for el in to_merge),
             max(el[1].bbox[3] for el in to_merge))
 
-        merged_element = PdfElement(page.page_number, None, merged_bbox, merged_org_text, text, True, True, True)
+        merged_element = PdfElement(page.page_number, merged_bbox, merged_org_text, text, True, True, True)
         merged_element.children = to_merge
         page.elements.insert(insert_position, (self.index, merged_element))
         self.index += 1
@@ -177,6 +177,12 @@ class Pdf:
             for key, element in page.elements:
                 if key == key_to_toggle:
                     element.visible = not element.visible
+
+    def toggle_concat(self, key_to_toggle):
+        for page in self.pages:
+            for key, element in page.elements:
+                if key == key_to_toggle:
+                    element.concat = not element.concat
 
     def split_element(self, key_to_split):
         for page in self.pages:
@@ -247,6 +253,14 @@ class Pdf:
             page = self.pages[page_number]
             for key, element in page.elements:
                 yield key, element
+
+    def get_last_element_in_page(self, page_number):
+        """Return the last element of the page safely."""
+        if 0 <= page_number and page_number < len(self.pages):
+            page = self.pages[page_number]
+            if page.elements:  # Check if elements list is not empty
+                return page.elements[-1][1]  # Return the last element
+        return None  # If page doesn't exist or there are no elements
 
     def get_pixmap(self, page_number):
         return self.doc.load_page(page_number).get_pixmap()

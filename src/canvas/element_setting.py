@@ -18,7 +18,7 @@ SETTING_TABLE = {
     PdfViewerToolbarItem.MergeAndSplit: {
         True: {
             True: {
-                True:   {'outline': 'green', 'fill': 'green', 'dash': None, 'width': 2},
+                True:   {'outline': 'OliveDrab4', 'fill': 'OliveDrab4', 'dash': None, 'width': 2},
                 False:  {'outline': 'coral', 'fill': 'coral', 'dash': (3, 2), 'width': 1},
             },
             False:  {'outline': 'black', 'fill': 'black', 'dash': (5, 3), 'width': 1}
@@ -30,6 +30,17 @@ SETTING_TABLE = {
             True: {
                 True:   {'outline': 'DarkOrchid4', 'fill': 'DarkOrchid4', 'dash': None, 'width': 2},
                 False:  {'outline': 'SkyBlue4', 'fill': 'SkyBlue4', 'dash': (3, 2), 'width': 1},
+            },
+            False:  {'outline': 'gray40', 'fill': 'gray40', 'dash': (5, 3), 'width': 1}
+        },
+        False: {'outline': 'gray80', 'fill': 'gray80', 'dash': (5, 3), 'width': 1}
+    },
+    PdfViewerToolbarItem.Concat: {
+        True: {
+            True: {
+                0:  {'outline': 'bisque3', 'fill': 'bisque3', 'dash': (5, 3), 'width': 1},
+                1:   {'outline': 'DeepPink2', 'fill': 'DeepPink2', 'dash': None, 'width': 2},
+                2:   {'outline': 'DeepPink2', 'fill': 'DeepPink2', 'dash': (3, 2), 'width': 1},
             },
             False:  {'outline': 'gray40', 'fill': 'gray40', 'dash': (5, 3), 'width': 1}
         },
