@@ -101,10 +101,10 @@ class Pdf:
                         self.index += 1
 
                 elif isinstance(element, LTFigure):
-                    cur_page.append(self.index, PdfElement(page_number + 1, element, element.bbox, "figure", "figure", False, True, True))
+                    cur_page.append(self.index, PdfElement(page_number + 1, element, element.bbox, "<<<figure>>>", "<<<figure>>>", False, True, True))
                     self.index += 1
                 elif isinstance(element, LTImage):
-                    cur_page.append(self.index, PdfElement(page_number + 1, element, element.bbox, "image", "image", False, True, True))
+                    cur_page.append(self.index, PdfElement(page_number + 1, element, element.bbox, "<<<image>>>", "<<<image>>>", False, True, True))
                     self.index += 1
 
     def merge(self, page_number, key_list):

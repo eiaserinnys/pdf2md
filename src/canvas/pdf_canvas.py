@@ -38,6 +38,7 @@ class PdfCanvas(tk.Canvas):
         if new_page_number >= 0 and new_page_number < self.pdf.get_page_number():
             self.current_page = new_page_number
             self.redraw()
+            self.event_generate('<<PageChanged>>')
 
     def get_current_page(self):
         return self.current_page
