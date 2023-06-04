@@ -190,6 +190,51 @@ class Pdf:
                             page.elements.insert(i + j, new_element)
                         break
 
+    def move_element(self, pivot_key, key_to_move, page_index, disposition = "after"):
+        if pivot_key == key_to_move or page_index >= len(self.pages):
+            return
+
+        pivot_index = None
+        move_index = None
+        page = self.pages[page_index]
+
+        for i, (key, element) in enumerate(page.elements):
+            if key == pivot_key and element.safe and element.visible:
+                pivot_index = i
+            elif key == key_to_move and element.safe and element.visible:
+                move_index = i
+
+        if pivot_index is None or move_index is None:
+            return False  # pivot_key or key_to_move was not found in the page
+
+        element_to_move = page.elements.pop(move_index)
+
+        if move_index < pivot_index:
+            pivot_index -= 1
+
+        if disposition == "after":
+            offset = 1
+        else:
+            offset = 0
+
+        page.elements.insert(pivot_index + offset, element_to_move)
+
+        return True
+
+    def get_element(self, key):
+        for page in self.pages:
+            for k, element in page.elements:
+                if k == key:
+                    return element
+        return None    
+
+    def get_element_in_page(self, page, key):
+        if page < len(self.pages):
+            for k, element in self.pages[page].elements:
+                if k == key:
+                    return element
+        return None
+    
     def iter_elements(self):
         """Generator method to iterate over elements safely."""
         for page in self.pages:

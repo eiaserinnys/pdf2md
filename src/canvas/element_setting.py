@@ -6,7 +6,7 @@ SETTING_TABLE = {
             True:   {'outline': 'black', 'fill': 'black', 'dash': None, 'width': 1},
             False:  {'outline': 'gray40', 'fill': 'gray40', 'dash': (5, 3), 'width': 1}
         },
-        False: {'outline': 'gray80', 'fill': 'gray80', 'dash': (5, 3), 'width': 1}
+        False: {'outline': 'red', 'fill': 'red', 'dash': (5, 3), 'width': 1}
     },
     PdfViewerToolbarItem.Visibility: {
         True: {
@@ -25,6 +25,16 @@ SETTING_TABLE = {
         },
         False: {'outline': 'gray80', 'fill': 'gray80', 'dash': (5, 3), 'width': 1}
     },
+    PdfViewerToolbarItem.Order: {
+        True: {
+            True: {
+                True:   {'outline': 'DarkOrchid4', 'fill': 'DarkOrchid4', 'dash': None, 'width': 2},
+                False:  {'outline': 'SkyBlue4', 'fill': 'SkyBlue4', 'dash': (3, 2), 'width': 1},
+            },
+            False:  {'outline': 'gray40', 'fill': 'gray40', 'dash': (5, 3), 'width': 1}
+        },
+        False: {'outline': 'gray80', 'fill': 'gray80', 'dash': (5, 3), 'width': 1}
+    },
     'default': {
         True: {
             True:   {'outline': 'green', 'fill': 'green', 'dash': None, 'width': 2},
@@ -34,12 +44,12 @@ SETTING_TABLE = {
     }
 }
 
-def get_setting(mode, safe, visible, can_be_split):
+def get_setting(mode, safe, visible, option):
     settings = SETTING_TABLE.get(mode, SETTING_TABLE['default'])
     if isinstance(settings[safe], dict):
         settings = settings[safe].get(visible, settings[safe])
         if isinstance(settings, dict):
-            settings = settings.get(can_be_split, settings)
+            settings = settings.get(option, settings)
     else:
         settings = settings[safe]
     return settings

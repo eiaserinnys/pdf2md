@@ -33,10 +33,18 @@ class PdfCanvas(tk.Canvas):
 
         self.mode = None
         self.drag_enabled = False
+        self.pivot = None
+
+    def get_pivot(self):
+        return self.pivot
+    
+    def set_pivot(self, pivot):
+        self.pivot = pivot
 
     def change_page(self, new_page_number):
         if new_page_number >= 0 and new_page_number < self.pdf.get_page_number():
             self.current_page = new_page_number
+            self.pivot = None
             self.redraw()
             self.event_generate('<<PageChanged>>')
 
@@ -45,6 +53,7 @@ class PdfCanvas(tk.Canvas):
 
     def change_mode(self, new_mode):
         self.mode = new_mode
+        self.pivot = None
         if self.mode == PdfViewerToolbarItem.Visibility or self.mode == PdfViewerToolbarItem.MergeAndSplit:
             self.drag_enabled = True
         else:
@@ -93,13 +102,19 @@ class PdfCanvas(tk.Canvas):
             y2 = max(y2, y1 + 1)  # Ensure y2 is always greater than y1
 
             # Create the rectangle and save the handle
+            option = None
+            if self.mode == PdfViewerToolbarItem.MergeAndSplit:
+                option = element.can_be_split()
+            elif self.mode == PdfViewerToolbarItem.Order:
+                option = key == self.pivot
+
             self.elm.add_element(
                 self.mode, 
                 key, 
                 index, 
                 element.safe, 
                 element.visible, 
-                element.can_be_split(),
+                option,
                 x1, y1, x2, y2)
             
             if element.visible and element.safe:
@@ -133,53 +148,60 @@ class PdfCanvas(tk.Canvas):
 
     def on_drag_start(self, event):
         """Begining drag of an object"""
-        if self.drag_enabled:
-            # record the item and its location
-            self.drag_data["item"] = None   # we do not consider it as drag until the mouse is moved
-            self.drag_data["x"] = event.x
-            self.drag_data["y"] = event.y
+        # record the item and its location
+        self.drag_data["item"] = None   # we do not consider it as drag until the mouse is moved
+        self.drag_data["x"] = event.x
+        self.drag_data["y"] = event.y
+        self.drag_data["moved"] = False
 
     def on_drag_motion(self, event):
         """Handle dragging of an object"""
-        if self.drag_enabled:
-            # compute how much the mouse has moved
-            delta_x = event.x - self.drag_data["x"]
-            delta_y = event.y - self.drag_data["y"]
-            
-            if self.drag_data["item"] is None:
-                # now we begin drag
+        # compute how much the mouse has moved
+        delta_x = event.x - self.drag_data["x"]
+        delta_y = event.y - self.drag_data["y"]
+        
+        if self.drag_data["item"] is None:
+            # now we begin drag
+            self.drag_data["moved"] = True
+            if self.drag_enabled:
                 self.drag_data["item"] = self.create_rectangle(
                     self.canvasx(event.x), self.canvasy(event.y), 
                     self.canvasx(event.x) + delta_x, self.canvasy(event.y) + delta_y, 
                     outline="green",
                     dash = (5, 3))
-            else:
-                self.coords(
-                    self.drag_data["item"], 
-                    self.canvasx(self.drag_data["x"]), self.canvasy(self.drag_data["y"]), 
-                    self.canvasx(self.drag_data["x"]) + delta_x, self.canvasy(self.drag_data["y"]) + delta_y)
+        else:
+            self.coords(
+                self.drag_data["item"], 
+                self.canvasx(self.drag_data["x"]), self.canvasy(self.drag_data["y"]), 
+                self.canvasx(self.drag_data["x"]) + delta_x, self.canvasy(self.drag_data["y"]) + delta_y)
 
+        if self.drag_enabled:
             self.elm.update_drag(self.drag_data["item"])
 
     def on_drag_stop(self, event):
         """End drag of an object"""
-        if self.drag_enabled:
+        if self.drag_data["moved"]:
             if self.drag_data["item"] is not None:
                 # drag is finished, so we need to update the drag overlap
                 self.elm.update_drag(self.drag_data["item"])
                 self.event_generate("<<DragEnd>>")
                 self.delete(self.drag_data["item"])
-            else:
-                # mouse is not moved, so it is a click
-                x, y = self.canvasx(event.x), self.canvasy(event.y)
-                found = self.elm.find_by_point(x, y)
-                self.clicked_element = found[0] if found is not None else None
-                self.event_generate("<<ElementLeftClicked>>")
+        else:
+            # mouse is not moved, so it is a click
+            x, y = self.canvasx(event.x), self.canvasy(event.y)
+            found = self.elm.find_by_point(x, y)
+            self.clicked_element = found[0] if found is not None else None
+            self.event_generate("<<ElementLeftClicked>>")
 
-            # reset the drag information
-            self.drag_data["item"] = None
-            self.drag_data["x"] = 0
-            self.drag_data["y"] = 0
+        # reset the drag information
+        self.drag_data["item"] = None
+        self.drag_data["x"] = 0
+        self.drag_data["y"] = 0
+        self.drag_data["moved"] = False
+
+    def on_escape(self, event):
+        self.pivot = None
+        self.redraw()
 
     def on_mouse_rb_down(self, event):
         """Handle mouse moving over the canvas."""

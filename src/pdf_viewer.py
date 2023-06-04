@@ -31,6 +31,7 @@ class PDFViewer(tk.Frame):
         self.canvas.bind("<<DragEnd>>", self.on_drag_end_by_canvas)
         self.canvas.bind("<<ElementLeftClicked>>", self.on_element_left_clicked_by_canvas)
         self.canvas.bind("<<ElementRightClicked>>", self.on_element_right_clicked_by_canvas)
+        self.master.bind("<Escape>", self.canvas.on_escape)
 
         # Initialize Text widget
         self.text_widget = tk.Text(self.paned_window, font=("Times New Roman", 11))
@@ -110,6 +111,18 @@ class PDFViewer(tk.Frame):
             self.pdf.toggle_visibility(key)
             self.canvas.redraw()
             self.add_elements_to_text_widget()
+        elif self.toolbar.get_current_selection() == PdfViewerToolbarItem.Order:
+            key = self.canvas.get_clicked_element()
+            if self.canvas.get_pivot() is None:
+                element = self.pdf.get_element_in_page(self.canvas.get_current_page(), key)
+                if element is not None and element.safe and element.visible:
+                    self.canvas.set_pivot(key)
+                    self.canvas.redraw()
+            else:
+                if self.pdf.move_element(self.canvas.get_pivot(), key, self.canvas.get_current_page(), "after"):
+                    self.canvas.set_pivot(key)
+                    self.canvas.redraw()
+                    self.add_elements_to_text_widget()
 
     def on_element_right_clicked_by_canvas(self, event):
         if self.toolbar.get_current_selection() == PdfViewerToolbarItem.MergeAndSplit:
@@ -117,6 +130,13 @@ class PDFViewer(tk.Frame):
             self.pdf.split_element(key)
             self.canvas.redraw()
             self.add_elements_to_text_widget()
+        elif self.toolbar.get_current_selection() == PdfViewerToolbarItem.Order:
+            key = self.canvas.get_clicked_element()
+            if self.canvas.get_pivot() is not None:
+                if self.pdf.move_element(self.canvas.get_pivot(), key, self.canvas.get_current_page(), "before"):
+                    self.canvas.set_pivot(key)
+                    self.canvas.redraw()
+                    self.add_elements_to_text_widget()
 
     def on_toolbar_button_clicked(self, event):
         self.canvas.change_mode(self.toolbar.get_current_selection())
