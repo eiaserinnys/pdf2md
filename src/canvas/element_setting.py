@@ -1,4 +1,4 @@
-from src.pdf_viewer_toolbar_item import PdfViewerToolbarItem
+from src.toolbar.pdf_viewer_toolbar_item import PdfViewerToolbarItem
 
 SETTING_TABLE = {
     PdfViewerToolbarItem.SafeArea: {

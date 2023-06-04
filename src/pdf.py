@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import pdfplumber
 from pdfminer.layout import LAParams, LTTextBox, LTImage, LTFigure
 from pdfminer.high_level import extract_pages
-from src.utility import check_overlap
+from src.canvas.utility import check_overlap
 
 class PdfPage:
     def __init__(self, page_number):

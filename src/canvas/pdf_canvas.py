@@ -1,10 +1,10 @@
 import tkinter as tk
 from PIL import Image, ImageTk
-from src.draggable_rectangle import DraggableRectangle
 from src.pdf import PdfRect
-from src.pdf_viewer_toolbar_item import PdfViewerToolbarItem
-from src.pdf_element_manager import PdfElementManager
-from src.utility import get_image_extent
+from src.toolbar.pdf_viewer_toolbar_item import PdfViewerToolbarItem
+from src.canvas.pdf_element_manager import PdfElementManager
+from src.canvas.draggable_rectangle import DraggableRectangle
+from src.canvas.utility import get_image_extent
 
 class PdfCanvas(tk.Canvas):
     def __init__(self, master=None, pdf=None, **kwargs):

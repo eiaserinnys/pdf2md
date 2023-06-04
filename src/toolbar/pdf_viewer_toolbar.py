@@ -1,5 +1,5 @@
 import tkinter as tk
-from src.pdf_viewer_toolbar_item import PdfViewerToolbarItem
+from src.toolbar.pdf_viewer_toolbar_item import PdfViewerToolbarItem
 
 class PdfViewerToolbar(tk.Frame):
     def __init__(self, parent):

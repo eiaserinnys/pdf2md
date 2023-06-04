@@ -1,5 +1,3 @@
-import tkinter as tk
-
 class DraggableRectangle:
     CORNER_THRESHOLD = 10  # distance within which to consider a corner drag
     EDGE_THRESHOLD = 5  # distance within which to consider an edge drag

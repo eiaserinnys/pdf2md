@@ -1,6 +1,6 @@
 from PIL import Image, ImageTk
-from src.element_setting import get_setting
-from src.utility import check_overlap
+from src.canvas.element_setting import get_setting
+from src.canvas.utility import check_overlap
 
 class PdfElementManager:
     def __init__(self, canvas):

@@ -1,12 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
-from PIL import Image, ImageTk
 from src.draggable_treeview import DraggableTreeview
 from src.pdf import Pdf
-from src.pdf_canvas import PdfCanvas
-from src.utility import check_overlap
-from src.pdf_viewer_toolbar import PdfViewerToolbar
-from src.pdf_viewer_toolbar_item import PdfViewerToolbarItem
+from src.canvas.pdf_canvas import PdfCanvas
+from src.toolbar.pdf_viewer_toolbar import PdfViewerToolbar
+from src.toolbar.pdf_viewer_toolbar_item import PdfViewerToolbarItem
 
 class PDFViewer(tk.Frame):
     def __init__(self, pdf_path, master=None):
