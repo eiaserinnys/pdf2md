@@ -98,6 +98,7 @@ class PdfCanvas(tk.Canvas):
                 index, 
                 element.safe, 
                 element.visible, 
+                element.can_be_split(),
                 x1, y1, x2, y2)
             
             if element.visible and element.safe:

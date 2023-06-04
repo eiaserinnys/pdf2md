@@ -15,9 +15,6 @@ class PdfElementManager:
         self.elements = []
         self.selected_elements = []
 
-    def get(self):
-        return self.elements
-
     def get_selected(self):
         return self.selected_elements
 
@@ -27,8 +24,8 @@ class PdfElementManager:
     def find_by_point(self, x, y):
         return next((element for element in self.elements if self.is_inside_rectangle(x, y, element[1])), None)
 
-    def add_element(self, mode, key, index, safe, visible, x1, y1, x2, y2):
-        settings = get_setting(mode, safe, visible)
+    def add_element(self, mode, key, index, safe, visible, can_be_split, x1, y1, x2, y2):
+        settings = get_setting(mode, safe, visible, can_be_split)
         outline = settings['outline']
         fill = settings['fill']
         dash = settings.get('dash')

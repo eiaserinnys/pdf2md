@@ -36,6 +36,9 @@ class PdfElement:
     children = None
     marked: bool = False
 
+    def can_be_split(self):
+        return self.children != None and len(self.children) > 1
+
 class Pdf:
     def __init__(self, pdf_path):
         # Load the PDF with PyMuPDF and pdfminer
@@ -179,7 +182,7 @@ class Pdf:
         for page in self.pages:
             for i, (key, element) in enumerate(page.elements):
                 if key == key_to_split:
-                    if element.children != None and len(element.children) > 1:
+                    if element.safe and element.visible and element.can_be_split():
                         # remove the original element
                         page.elements.pop(i)
                         # insert new elements at the same position
