@@ -7,8 +7,10 @@ async def main():
     root.title("pdf2md")
     root.geometry('1200x800')  # set initial window size
 
-    path_name = './example/voyager.pdf'
-    intm_name = "./cache/voyager.context"
+    # path_name = './example/voyager.pdf'
+    # intm_name = "./cache/voyager.context"
+    path_name = "./cache/2305.16213.pdf"
+    intm_name = "./cache/2305.16213.context"
     # path_name = './example/1751-0473-7-7.pdf'
     # intm_name = './cache/1751-0473-7-7.context'
 

@@ -1,52 +1,22 @@
 import os
-import pickle
 import fitz  # PyMuPDF
+import pickle
 from dataclasses import dataclass, asdict
 import pdfplumber
 from pdfminer.layout import LAParams, LTTextBox, LTImage, LTFigure
 from pdfminer.high_level import extract_pages
+from src.pdf.pdf_element import PdfRect, PdfElement
 from src.canvas.utility import check_overlap
 
 class PdfPage:
     def __init__(self, page_number, elements = None):
         self.page_number = page_number
+        self.width = 1
+        self.height = 1
         self.elements = [] if elements is None else elements
 
     def append(self, key, element):
         self.elements.append((key, element))
-
-@dataclass
-class PdfRect:
-    x1: float
-    y1: float
-    x2: float
-    y2: float
-
-    def as_tuple(self):
-        return self.x1, self.y1, self.x2, self.y2    
-
-@dataclass
-class PdfElement:
-    page_number: int
-    bbox: PdfRect
-    org_text: str
-    text: str
-    mergable: bool
-    safe: bool
-    visible: bool
-    children = None
-    concat: bool = False
-    marked: bool = False
-
-    def to_dict(self):
-        data = asdict(self)
-        data['bbox'] = asdict(self.bbox) # Assuming PdfRect is also a dataclass
-        if self.children is not None:
-            data['children'] = [(key, child.to_dict()) for key, child in self.children]
-        return data
-
-    def can_be_split(self):
-        return self.children != None and len(self.children) > 1
 
 class Pdf:
     class Context:
@@ -64,7 +34,7 @@ class Pdf:
             with open(filename, 'rb') as file:
                 context = pickle.load(file)
             return context
-        
+
     def __init__(self, pdf_path, intm_path):
         self.intm_path = intm_path
 
@@ -80,8 +50,6 @@ class Pdf:
             detect_vertical = False, 
             all_texts = False)
 
-        self.pdfminer_pages = list(extract_pages(pdf_path, laparams = params))
-
         # self.pdfplumber = pdfplumber.open(pdf_path)
 
         # for page in self.pdfplumber.pages:
@@ -92,16 +60,25 @@ class Pdf:
         if os.path.exists(self.intm_path):
             self.context = Pdf.Context.load_from_pickle(self.intm_path)
         else:
+            doc = fitz.open(pdf_path)
+            pdfminer_pages = list(extract_pages(pdf_path, laparams = params))
+
             self.context = Pdf.Context()
-            self.build_element_list()
+            self.build_element_list(doc, pdfminer_pages)
             self.recalculate_safe_area()
             self.save()
 
-    def build_element_list(self):
-        for page_number, pdfminer_page in enumerate(self.pdfminer_pages):
+    def build_element_list(self, doc, pdfminer_pages):
+        for page_number, pdfminer_page in enumerate(pdfminer_pages):
 
             self.context.pages.append(PdfPage(page_number + 1))
+
             cur_page = self.context.pages[-1]
+            cur_page.width, cur_page.height = pdfminer_page.width, pdfminer_page.height
+
+            doc_page = doc.load_page(page_number)
+            #cur_page.pixmap = doc_page.get_pixmap()
+            cur_page.pixmap_ratio = doc_page.bound().width / doc_page.bound().height
 
             for element in pdfminer_page:
                 if isinstance(element, LTTextBox):
@@ -188,12 +165,11 @@ class Pdf:
 
     def recalculate_safe_area(self):
         for page in self.context.pages:
-            pdfminer_page = self.pdfminer_pages[page.page_number - 1]
             safe_area = (
-                pdfminer_page.width * self.context.margin.x1, 
-                pdfminer_page.height * (1 - self.context.margin.y2),
-                pdfminer_page.width * self.context.margin.x2,
-                pdfminer_page.height * (1 - self.context.margin.y1), 
+                page.width * self.context.margin.x1, 
+                page.height * (1 - self.context.margin.y2),
+                page.width * self.context.margin.x2,
+                page.height * (1 - self.context.margin.y1), 
             )
             for _, element in page.elements:
                 element.safe = check_overlap(element.bbox, safe_area)
@@ -290,20 +266,22 @@ class Pdf:
 
     def get_pixmap(self, page_number):
         return self.doc.load_page(page_number).get_pixmap()
+        #return self.context.pages[page_number].pixmap
     
     def get_page_ratio(self, page_number):
-        page = self.doc[page_number]
-        return page.bound().width / page.bound().height
+        #page = self.doc[page_number]
+        #return page.bound().width / page.bound().height
+        return self.context.pages[page_number].pixmap_ratio
     
     def get_page_extent(self, page_number):
-        page = self.pdfminer_pages[page_number]
+        page = self.context.pages[page_number]
         return page.width, page.height
     
     def get_safe_margin(self):
         return self.context.margin
     
     def get_page_number(self):
-        return len(self.pdfminer_pages)
+        return len(self.context.pages)
     
     def set_safe_margin(self, margin):
         self.context.margin = margin

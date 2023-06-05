@@ -1,6 +1,6 @@
 import tkinter as tk
 from PIL import Image, ImageTk
-from src.pdf import PdfRect
+from src.pdf.pdf import PdfRect
 from src.toolbar.pdf_viewer_toolbar_item import PdfViewerToolbarItem
 from src.canvas.pdf_element_manager import PdfElementManager
 from src.canvas.draggable_rectangle import DraggableRectangle
