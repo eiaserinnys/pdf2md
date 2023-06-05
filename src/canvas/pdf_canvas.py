@@ -54,7 +54,7 @@ class PdfCanvas(tk.Canvas):
     def change_mode(self, new_mode):
         self.mode = new_mode
         self.pivot = None
-        if self.mode == PdfViewerToolbarItem.Visibility or self.mode == PdfViewerToolbarItem.MergeAndSplit:
+        if self.mode == PdfViewerToolbarItem.Visibility or self.mode == PdfViewerToolbarItem.MergeAndSplit or self.mode == PdfViewerToolbarItem.JoinAndSplit:
             self.drag_enabled = True
         else:
             self.drag_enabled = False
@@ -111,7 +111,7 @@ class PdfCanvas(tk.Canvas):
 
             # Create the rectangle and save the handle
             option = None
-            if self.mode == PdfViewerToolbarItem.MergeAndSplit:
+            if self.mode == PdfViewerToolbarItem.MergeAndSplit or self.mode == PdfViewerToolbarItem.JoinAndSplit:
                 option = element.can_be_split()
             elif self.mode == PdfViewerToolbarItem.Order:
                 option = key == self.pivot

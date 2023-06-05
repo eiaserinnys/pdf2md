@@ -109,7 +109,12 @@ class PDFViewer(tk.Frame):
             self.redraw()
         elif self.toolbar.get_current_selection() == PdfViewerToolbarItem.MergeAndSplit:
             elements = self.canvas.get_selected_elements()
-            self.pdf.merge(self.canvas.get_current_page(), elements)
+            self.pdf.merge(self.canvas.get_current_page(), elements, True)
+            self.pdf.save()
+            self.redraw()
+        elif self.toolbar.get_current_selection() == PdfViewerToolbarItem.JoinAndSplit:
+            elements = self.canvas.get_selected_elements()
+            self.pdf.merge(self.canvas.get_current_page(), elements, False)
             self.pdf.save()
             self.redraw()
 
@@ -137,7 +142,7 @@ class PDFViewer(tk.Frame):
             self.redraw()
 
     def on_element_right_clicked_by_canvas(self, event):
-        if self.toolbar.get_current_selection() == PdfViewerToolbarItem.MergeAndSplit:
+        if self.toolbar.get_current_selection() == PdfViewerToolbarItem.MergeAndSplit or self.toolbar.get_current_selection() == PdfViewerToolbarItem.JoinAndSplit:
             self.pdf.split_element(self.canvas.get_clicked_element())
             self.pdf.save()
             self.redraw()

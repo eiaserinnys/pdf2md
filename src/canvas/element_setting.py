@@ -25,6 +25,16 @@ SETTING_TABLE = {
         },
         False: {'outline': 'gray80', 'fill': 'gray80', 'dash': (5, 3), 'width': 1}
     },
+    PdfViewerToolbarItem.JoinAndSplit: {
+        True: {
+            True: {
+                True:   {'outline': 'OliveDrab4', 'fill': 'OliveDrab4', 'dash': None, 'width': 2},
+                False:  {'outline': 'coral', 'fill': 'coral', 'dash': (3, 2), 'width': 1},
+            },
+            False:  {'outline': 'black', 'fill': 'black', 'dash': (5, 3), 'width': 1}
+        },
+        False: {'outline': 'gray80', 'fill': 'gray80', 'dash': (5, 3), 'width': 1}
+    },
     PdfViewerToolbarItem.Order: {
         True: {
             True: {

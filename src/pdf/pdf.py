@@ -2,12 +2,10 @@ import os
 import fitz  # PyMuPDF
 import pickle
 from io import BytesIO
-from PIL import Image, ImageTk
-from dataclasses import dataclass, asdict
-import pdfplumber
+from PIL import Image
 from pdfminer.layout import LAParams, LTTextBox, LTImage, LTFigure
 from pdfminer.high_level import extract_pages
-from src.pdf.pdf_element import PdfRect, PdfElement
+from src.pdf.pdf_element import PdfRect, PdfElement, PdfElementType
 from src.canvas.utility import check_overlap
 
 class PdfPage:
@@ -52,13 +50,6 @@ class Pdf:
             detect_vertical = False, 
             all_texts = False)
 
-        # self.pdfplumber = pdfplumber.open(pdf_path)
-
-        # for page in self.pdfplumber.pages:
-        #     tables = page.find_tables()
-        #     for table in tables:
-        #         print(table.bbox.x0, table.bbox.y0, table.bbox.x1, table.bbox.y1)
-
         if os.path.exists(self.intm_path):
             self.context = Pdf.Context.load_from_pickle(self.intm_path)
         else:
@@ -69,6 +60,7 @@ class Pdf:
             self.recalculate_safe_area()
             self.save()
 
+        # reconstruct images from pickled bytes
         self.images = []
         for page in self.context.pages:
             byte_arr = BytesIO(page.bytes_content)
@@ -92,87 +84,9 @@ class Pdf:
             cur_page.bytes_content = byte_arr.getvalue()            
 
             for element in pdfminer_page:
-                if isinstance(element, LTTextBox):
-                    # for text_line in element:
-                    text = element.get_text()
-                    text = text.replace("-\n", "")
-                    text = text.replace("\n", " ")
-                    text = text.strip()
-
-                    new_element = PdfElement(page_number + 1, element.bbox, element.get_text(), text, True, True, True)
-                    cur_page.append(self.context.index, new_element)
+                if PdfElement.can_be_created(element):
+                    cur_page.append(self.context.index, PdfElement.from_pdfminer(page_number + 1, element))
                     self.context.index += 1
-
-                    new_element.children = []
-
-                    for line in element:
-                        text = line.get_text()
-                        text = text.replace("-\n", "")
-                        text = text.replace("\n", " ")
-                        text = text.strip()
-
-                        new_element.children.append((self.context.index, PdfElement(page_number + 1, line.bbox, line.get_text(), text, True, True, True)))
-                        self.context.index += 1
-
-                elif isinstance(element, LTFigure):
-                    cur_page.append(self.context.index, PdfElement(page_number + 1, element.bbox, "<<<figure>>>", "<<<figure>>>", False, True, True))
-                    self.context.index += 1
-                elif isinstance(element, LTImage):
-                    cur_page.append(self.context.index, PdfElement(page_number + 1, element.bbox, "<<<image>>>", "<<<image>>>", False, True, True))
-                    self.context.index += 1
-
-    def merge(self, page_number, key_list):
-        if key_list is None or len(key_list) <= 0:
-            return
-
-        page = self.context.pages[page_number]
-        insert_position = None
-      
-        # find elements to merge
-        to_merge = []
-        for k in key_list:
-            for i, (key, element) in enumerate(page.elements):
-                if key == k:
-                    if element.safe and element.visible and element.mergable:
-                        if insert_position is None or i < insert_position:
-                            insert_position = i
-                        to_merge.append((key, element))
-
-        if len(to_merge) < 2:
-            return
-
-        # mark elements to remove
-        for _, e in to_merge:
-            e.marked = True
-
-        # create merged element
-        merged_org_text = ''.join([el[1].org_text for el in to_merge])
-        text = merged_org_text.replace("-\n", "")
-        text = text.replace("\n", " ")
-        text = text.strip()
-
-        merged_bbox = (
-            min(el[1].bbox[0] for el in to_merge),
-            min(el[1].bbox[1] for el in to_merge),
-            max(el[1].bbox[2] for el in to_merge),
-            max(el[1].bbox[3] for el in to_merge))
-
-        merged_element = PdfElement(page.page_number, merged_bbox, merged_org_text, text, True, True, True)
-        merged_element.children = to_merge
-        page.elements.insert(insert_position, (self.context.index, merged_element))
-        self.context.index += 1
-
-        # removed marked elements
-        new_elements = []
-        for element in page.elements:
-            if element[1].marked:
-                continue
-            new_elements.append(element)
-        page.elements = new_elements
-
-        # reset marked
-        for _, e in to_merge:
-            e.marked = False
 
     def recalculate_safe_area(self):
         for page in self.context.pages:
@@ -206,8 +120,48 @@ class Pdf:
                         page.elements.pop(i)
                         # insert new elements at the same position
                         for j, new_element in enumerate(element.children):
-                            page.elements.insert(i + j, new_element)
+                            page.elements.insert(i + j, (self.context.index, new_element))
+                            self.context.index += 1
                         break
+
+    def merge(self, page_number, key_list, concat_or_join):
+        if key_list is None or len(key_list) <= 0:
+            return
+
+        page = self.context.pages[page_number]
+        insert_position = None
+      
+        # find elements to merge
+        to_merge = []
+        for k in key_list:
+            for i, (key, element) in enumerate(page.elements):
+                if key == k:
+                    if element.safe and element.visible and element.can_be_merged():
+                        if insert_position is None or i < insert_position:
+                            insert_position = i
+                        to_merge.append(element)
+
+        if len(to_merge) < 2:
+            return
+
+        # mark elements to remove
+        for e in to_merge:
+            e.marked = True
+
+        page.elements.insert(insert_position, (self.context.index, PdfElement.from_merge(page.page_number, to_merge, concat_or_join)))
+        self.context.index += 1
+
+        # removed marked elements
+        new_elements = []
+        for element in page.elements:
+            if element[1].marked:
+                continue
+            new_elements.append(element)
+        page.elements = new_elements
+
+        # reset marked
+        for e in to_merge:
+            e.marked = False
 
     def move_element(self, pivot_key, key_to_move, page_index, disposition = "after"):
         if pivot_key == None or key_to_move == None or pivot_key == key_to_move or page_index >= len(self.context.pages):

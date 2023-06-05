@@ -3,7 +3,8 @@ from enum import Enum, auto
 class PdfViewerToolbarItem(Enum):
     SafeArea = auto(), "Safe Area"
     Visibility = auto(), "Visibility"
-    MergeAndSplit = auto(), "Merge & Split"
+    MergeAndSplit = auto(), "Concat / Split"
+    JoinAndSplit = auto(), "Join / Split"
     Order = auto(), "Order"
     Concat = auto(), "Link Next"
 
