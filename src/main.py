@@ -10,11 +10,11 @@ async def main():
     # path_name = './example/voyager.pdf'
     # intm_name = "./cache/voyager.context"
     path_name = "./cache/2305.16213.pdf"
-    intm_name = "./cache/2305.16213.context"
+    intm_dir = "./cache"
     # path_name = './example/1751-0473-7-7.pdf'
     # intm_name = './cache/1751-0473-7-7.context'
 
-    app = PDFViewer(path_name, intm_name, master=root)
+    app = PDFViewer(path_name, intm_dir, master=root)
     app.mainloop()
 
 if __name__ == "__main__":

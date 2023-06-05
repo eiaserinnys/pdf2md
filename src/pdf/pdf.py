@@ -1,6 +1,8 @@
 import os
 import fitz  # PyMuPDF
 import pickle
+from io import BytesIO
+from PIL import Image, ImageTk
 from dataclasses import dataclass, asdict
 import pdfplumber
 from pdfminer.layout import LAParams, LTTextBox, LTImage, LTFigure
@@ -35,11 +37,11 @@ class Pdf:
                 context = pickle.load(file)
             return context
 
-    def __init__(self, pdf_path, intm_path):
-        self.intm_path = intm_path
-
-        # Load the PDF with PyMuPDF and pdfminer
-        self.doc = fitz.open(pdf_path)
+    def __init__(self, pdf_path, intm_dir):
+        self.intm_dir = intm_dir
+        self.intm_path = os.path.join(
+            intm_dir, 
+            os.path.splitext(os.path.basename(pdf_path))[0] + ".context")
 
         params = LAParams(
             line_overlap = 0.5, 
@@ -62,11 +64,15 @@ class Pdf:
         else:
             doc = fitz.open(pdf_path)
             pdfminer_pages = list(extract_pages(pdf_path, laparams = params))
-
             self.context = Pdf.Context()
             self.build_element_list(doc, pdfminer_pages)
             self.recalculate_safe_area()
             self.save()
+
+        self.images = []
+        for page in self.context.pages:
+            byte_arr = BytesIO(page.bytes_content)
+            self.images.append(Image.open(byte_arr))
 
     def build_element_list(self, doc, pdfminer_pages):
         for page_number, pdfminer_page in enumerate(pdfminer_pages):
@@ -77,8 +83,13 @@ class Pdf:
             cur_page.width, cur_page.height = pdfminer_page.width, pdfminer_page.height
 
             doc_page = doc.load_page(page_number)
-            #cur_page.pixmap = doc_page.get_pixmap()
-            cur_page.pixmap_ratio = doc_page.bound().width / doc_page.bound().height
+            pix = doc_page.get_pixmap(matrix=fitz.Matrix(2, 2))  # This is your pixmap from PyMuPDF
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            byte_arr = BytesIO()
+            img.save(byte_arr, format='JPEG')            
+            
+            # Get the bytes content
+            cur_page.bytes_content = byte_arr.getvalue()            
 
             for element in pdfminer_page:
                 if isinstance(element, LTTextBox):
@@ -265,13 +276,10 @@ class Pdf:
         return None  # If page doesn't exist or there are no elements
 
     def get_pixmap(self, page_number):
-        return self.doc.load_page(page_number).get_pixmap()
-        #return self.context.pages[page_number].pixmap
+        return self.images[page_number]
     
     def get_page_ratio(self, page_number):
-        #page = self.doc[page_number]
-        #return page.bound().width / page.bound().height
-        return self.context.pages[page_number].pixmap_ratio
+        return self.images[page_number].width / self.images[page_number].height
     
     def get_page_extent(self, page_number):
         page = self.context.pages[page_number]

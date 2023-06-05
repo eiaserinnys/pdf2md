@@ -7,13 +7,13 @@ from src.toolbar.pdf_viewer_toolbar import PdfViewerToolbar
 from src.toolbar.pdf_viewer_toolbar_item import PdfViewerToolbarItem
 
 class PDFViewer(tk.Frame):
-    def __init__(self, pdf_path, intm_path, master=None):
+    def __init__(self, pdf_path, intm_dir, master=None):
         super().__init__(master)
         self.master = master
         self.pack(fill='both', expand=1)
 
         # Load the PDF with PyMuPDF and pdfminer
-        self.pdf = Pdf(pdf_path, intm_path)
+        self.pdf = Pdf(pdf_path, intm_dir)
 
         # Create toolbar
         self.toolbar = PdfViewerToolbar(self)

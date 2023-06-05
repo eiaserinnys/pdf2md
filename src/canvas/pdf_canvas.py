@@ -80,7 +80,9 @@ class PdfCanvas(tk.Canvas):
         page_width, page_height = page_extent
 
         # Convert the PyMuPDF page to PIL Image and resize to fit window
-        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+
+        #img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        img = pix.copy()
         img = img.resize((get_image_extent(self, pix)), Image.LANCZOS)
 
         # Convert the PIL Image to PhotoImage and show it on the Canvas
