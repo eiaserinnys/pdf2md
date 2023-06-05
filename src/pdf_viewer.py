@@ -57,9 +57,10 @@ class PDFViewer(tk.Frame):
         for key, element in self.pdf.iter_elements_page(self.canvas.get_current_page()):
             if not element.safe or not element.visible:
                 continue  # Skip unsafe or invisible elements
-            if element.contd:
+            if element.contd == 1:
                 self.text_widget.insert(tk.END, f'{element.text} ')
             else:
+                # it should be shown as a new line even if it is a join
                 self.text_widget.insert(tk.END, f'{element.text}\n')
 
     def add_elements_to_treeview(self):
@@ -117,6 +118,11 @@ class PDFViewer(tk.Frame):
             self.pdf.merge(self.canvas.get_current_page(), elements, False)
             self.pdf.save()
             self.redraw()
+        elif self.toolbar.get_current_selection() == PdfViewerToolbarItem.Body:
+            for key in self.canvas.get_selected_elements():
+                self.pdf.toggle_body(key)
+            self.pdf.save()
+            self.redraw()
 
     def on_element_left_clicked_by_canvas(self, event):
         if self.toolbar.get_current_selection() == PdfViewerToolbarItem.Visibility:
@@ -137,9 +143,15 @@ class PDFViewer(tk.Frame):
                     self.canvas.set_pivot(key)
                     self.redraw()
         elif self.toolbar.get_current_selection() == PdfViewerToolbarItem.Concat:
-            self.pdf.toggle_concat(self.canvas.get_clicked_element())
+            self.pdf.toggle_continue(self.canvas.get_clicked_element())
             self.pdf.save()
             self.redraw()
+        elif self.toolbar.get_current_selection() == PdfViewerToolbarItem.Body:
+            key = self.canvas.get_clicked_element()
+            self.pdf.toggle_body(key)
+            self.pdf.save()
+            self.redraw()
+
 
     def on_element_right_clicked_by_canvas(self, event):
         if self.toolbar.get_current_selection() == PdfViewerToolbarItem.MergeAndSplit or self.toolbar.get_current_selection() == PdfViewerToolbarItem.JoinAndSplit:

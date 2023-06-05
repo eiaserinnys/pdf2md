@@ -54,7 +54,7 @@ class PdfCanvas(tk.Canvas):
     def change_mode(self, new_mode):
         self.mode = new_mode
         self.pivot = None
-        if self.mode == PdfViewerToolbarItem.Visibility or self.mode == PdfViewerToolbarItem.MergeAndSplit or self.mode == PdfViewerToolbarItem.JoinAndSplit:
+        if self.mode == PdfViewerToolbarItem.Visibility or self.mode == PdfViewerToolbarItem.MergeAndSplit or self.mode == PdfViewerToolbarItem.JoinAndSplit or self.mode == PdfViewerToolbarItem.Body:
             self.drag_enabled = True
         else:
             self.drag_enabled = False
@@ -95,11 +95,11 @@ class PdfCanvas(tk.Canvas):
 
         #for element in pdfminer_page:
         index = 1
-        prev_element = None
-        if self.current_page - 1 > 0:
-            for key, element in self.pdf.iter_elements_page(self.current_page - 1):
-                if element.visible and element.safe:
-                    prev_element = element
+        prev_body_element = None
+        for i in range(self.current_page):
+            for key, element in self.pdf.iter_elements_page(i):
+                if element.visible and element.safe and element.body:
+                    prev_body_element = element
 
         for key, element in elements:
             x1, y1, x2, y2 = element.bbox
@@ -115,16 +115,24 @@ class PdfCanvas(tk.Canvas):
                 option = element.can_be_split()
             elif self.mode == PdfViewerToolbarItem.Order:
                 option = key == self.pivot
+            elif self.mode == PdfViewerToolbarItem.Body:
+                option = element.body
             elif self.mode == PdfViewerToolbarItem.Concat:
                 option = 0
-                if element.contd is None:
-                    if prev_element is not None:
-                        if prev_element.contd == 1:
-                            option = 3
-                        elif prev_element.contd == 2:
-                            option = 4
-                else:
-                    option = element.contd
+                if element.body:
+                    if element.contd is None:
+                        if prev_body_element is not None:
+                            if prev_body_element.contd == 1:
+                                option = 3
+                            elif prev_body_element.contd == 2:
+                                option = 4
+                    else:
+                        option = element.contd
+
+            c1 = c2 = None
+            if element.body:
+                c1 = prev_body_element.contd if prev_body_element is not None else None
+                c2 = element.contd
 
             self.elm.add_element(
                 self.mode, 
@@ -134,12 +142,12 @@ class PdfCanvas(tk.Canvas):
                 element.visible, 
                 option,
                 x1, y1, x2, y2,
-                prev_element.contd if prev_element is not None else None,
-                element.contd)
+                c1, c2)
             
             if element.visible and element.safe:
                 index += 1
-                prev_element = element
+                if element.body:
+                    prev_body_element = element
 
         safe_x1 = self.scale_factor_x * page_width * safe_margin.x1
         safe_x2 = self.scale_factor_x * page_width * safe_margin.x2

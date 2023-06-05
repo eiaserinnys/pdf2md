@@ -28,8 +28,8 @@ SETTING_TABLE = {
     PdfViewerToolbarItem.JoinAndSplit: {
         True: {
             True: {
-                True:   {'outline': 'OliveDrab4', 'fill': 'OliveDrab4', 'dash': None, 'width': 2},
-                False:  {'outline': 'coral', 'fill': 'coral', 'dash': (3, 2), 'width': 1},
+                True:   {'outline': 'RoyalBlue3', 'fill': 'RoyalBlue3', 'dash': None, 'width': 2},
+                False:  {'outline': 'RosyBrown3', 'fill': 'RosyBrown3', 'dash': (3, 2), 'width': 1},
             },
             False:  {'outline': 'black', 'fill': 'black', 'dash': (5, 3), 'width': 1}
         },
@@ -42,6 +42,16 @@ SETTING_TABLE = {
                 False:  {'outline': 'SkyBlue4', 'fill': 'SkyBlue4', 'dash': (3, 2), 'width': 1},
             },
             False:  {'outline': 'gray40', 'fill': 'gray40', 'dash': (5, 3), 'width': 1}
+        },
+        False: {'outline': 'gray80', 'fill': 'gray80', 'dash': (5, 3), 'width': 1}
+    },
+    PdfViewerToolbarItem.Body: {
+        True: {
+            True: {
+                True:   {'outline': 'SlateBlue4', 'fill': 'SlateBlue4', 'dash': None, 'width': 2},
+                False:  {'outline': 'bisque4', 'fill': 'bisque4', 'dash': (3, 2), 'width': 1},
+            },
+            False:  {'outline': 'black', 'fill': 'black', 'dash': (5, 3), 'width': 1}
         },
         False: {'outline': 'gray80', 'fill': 'gray80', 'dash': (5, 3), 'width': 1}
     },

@@ -31,9 +31,20 @@ class PdfElement:
         self.safe = True
         self.visible = True
         self.translated = None
-        self.body = True
+        self.__body = True
         self.contd = None           # continued
         self.marked = False
+
+    @property
+    def body(self):           # getter
+        if self.type == PdfElementType.Image or self.type == PdfElementType.Figure:
+            return False
+        return self.__body
+ 
+    @body.setter
+    def body(self, value):    # setter
+        if self.type != PdfElementType.Image and self.type != PdfElementType.Figure:
+            self.__body = value
 
     @classmethod
     def from_pdfminer(cls, page_number:int, element:object):
@@ -51,10 +62,10 @@ class PdfElement:
             return cls(page_number, PdfElementType.Line, element.bbox, text)
 
         elif isinstance(element, LTFigure):
-            return cls(page_number, PdfElementType.Figure, element.bbox, "<<<figure>>>", "<<<figure>>>")
+            return cls(page_number, PdfElementType.Figure, element.bbox, "<<<figure>>>")
 
         elif isinstance(element, LTImage):
-            return cls(page_number, PdfElementType.Image, element.bbox, "<<<image>>>", "<<<image>>>")
+            return cls(page_number, PdfElementType.Image, element.bbox, "<<<image>>>")
         
         return None
 
@@ -107,3 +118,13 @@ class PdfElement:
 
     def can_be_split(self):
         return self.children != None and len(self.children) > 1
+
+    def toggle_continue(self):
+        if self.contd is None:
+            self.contd = 1
+        elif self.contd == 1:
+            self.contd = 2
+        elif self.contd == 2:
+            self.contd = None
+        else:
+            self.contd = None

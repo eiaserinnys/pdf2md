@@ -105,16 +105,17 @@ class Pdf:
                 if key == key_to_toggle:
                     element.visible = not element.visible
 
-    def toggle_concat(self, key_to_toggle):
+    def toggle_body(self, key_to_toggle):
         for page in self.context.pages:
             for key, element in page.elements:
                 if key == key_to_toggle:
-                    if element.contd is None:
-                        element.contd = 1
-                    elif element.contd == 1:
-                        element.contd = 2
-                    elif element.contd == 2:
-                        element.contd = None
+                    element.body = not element.body
+
+    def toggle_continue(self, key_to_toggle):
+        for page in self.context.pages:
+            for key, element in page.elements:
+                if key == key_to_toggle:
+                    element.toggle_continue()
 
     def split_element(self, key_to_split):
         for page in self.context.pages:
