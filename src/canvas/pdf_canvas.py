@@ -164,30 +164,35 @@ class PdfCanvas(tk.Canvas):
         self.drag_data["x"] = event.x
         self.drag_data["y"] = event.y
         self.drag_data["moved"] = False
+        
+        x, y = self.canvasx(event.x), self.canvasy(event.y)
+        found = self.elm.find_by_point(x, y)
+        self.drag_data["start_item"] = found[0] if found is not None else None
 
     def on_drag_motion(self, event):
         """Handle dragging of an object"""
         # compute how much the mouse has moved
         delta_x = event.x - self.drag_data["x"]
         delta_y = event.y - self.drag_data["y"]
-        
-        if self.drag_data["item"] is None:
-            # now we begin drag
-            self.drag_data["moved"] = True
-            if self.drag_enabled:
+
+        if self.drag_enabled:
+            if not self.drag_data["moved"]:
+                # now we begin drag
+                self.drag_data["moved"] = True
                 self.drag_data["item"] = self.create_rectangle(
                     self.canvasx(event.x), self.canvasy(event.y), 
                     self.canvasx(event.x) + delta_x, self.canvasy(event.y) + delta_y, 
                     outline="green",
                     dash = (5, 3))
-        else:
-            self.coords(
-                self.drag_data["item"], 
-                self.canvasx(self.drag_data["x"]), self.canvasy(self.drag_data["y"]), 
-                self.canvasx(self.drag_data["x"]) + delta_x, self.canvasy(self.drag_data["y"]) + delta_y)
+            else:
+                self.coords(
+                    self.drag_data["item"], 
+                    self.canvasx(self.drag_data["x"]), self.canvasy(self.drag_data["y"]), 
+                    self.canvasx(self.drag_data["x"]) + delta_x, self.canvasy(self.drag_data["y"]) + delta_y)
 
-        if self.drag_enabled:
             self.elm.update_drag(self.drag_data["item"])
+        else:
+            self.elm.update_hover(self.canvasx(event.x), self.canvasy(event.y))
 
     def on_drag_stop(self, event):
         """End drag of an object"""
@@ -201,14 +206,18 @@ class PdfCanvas(tk.Canvas):
             # mouse is not moved, so it is a click
             x, y = self.canvasx(event.x), self.canvasy(event.y)
             found = self.elm.find_by_point(x, y)
-            self.clicked_element = found[0] if found is not None else None
-            self.event_generate("<<ElementLeftClicked>>")
+            last_element = found[0] if found is not None else None
+            
+            if self.drag_data["start_item"] == last_element:
+                self.clicked_element = last_element
+                self.event_generate("<<ElementLeftClicked>>")
 
         # reset the drag information
         self.drag_data["item"] = None
         self.drag_data["x"] = 0
         self.drag_data["y"] = 0
         self.drag_data["moved"] = False
+        self.drag_data["start_item"] = None
 
     def on_escape(self, event):
         self.pivot = None

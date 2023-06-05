@@ -149,7 +149,8 @@ class PDFViewer(tk.Frame):
         elif self.toolbar.get_current_selection() == PdfViewerToolbarItem.Order:
             if self.pdf.move_element(self.canvas.get_pivot(), self.canvas.get_clicked_element(), self.canvas.get_current_page(), "before"):
                 self.pdf.save()
-                self.canvas.set_pivot(self.canvas.get_clicked_element())
+                # it is very confusing, so we don't change the pivot
+                #self.canvas.set_pivot(self.canvas.get_clicked_element())
                 self.redraw()
 
     def on_toolbar_button_clicked(self, event):
