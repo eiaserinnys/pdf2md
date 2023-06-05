@@ -36,7 +36,7 @@ class PDFViewer(tk.Frame):
         self.master.bind("<Escape>", self.canvas.on_escape)
 
         # Initialize Text widget
-        self.text_widget = tk.Text(self.paned_window, font=("Times New Roman", 11))
+        self.text_widget = tk.Text(self.paned_window, font=("Segoe UI", 11))
         self.text_widget.config(spacing3=7)
         self.text_widget.pack(fill="both", expand=True)
         self.paned_window.add(self.text_widget)
@@ -57,11 +57,14 @@ class PDFViewer(tk.Frame):
         for key, element in self.pdf.iter_elements_page(self.canvas.get_current_page()):
             if not element.safe or not element.visible:
                 continue  # Skip unsafe or invisible elements
+
+            text = element.translated if element.translated is not None else element.text
+
             if element.contd == 1:
-                self.text_widget.insert(tk.END, f'{element.text} ')
+                self.text_widget.insert(tk.END, f'{text} ')
             else:
                 # it should be shown as a new line even if it is a join
-                self.text_widget.insert(tk.END, f'{element.text}\n')
+                self.text_widget.insert(tk.END, f'{text}\n')
 
     def add_elements_to_treeview(self):
         self.dtv.delete_all_items()
@@ -151,7 +154,11 @@ class PDFViewer(tk.Frame):
             self.pdf.toggle_body(key)
             self.pdf.save()
             self.redraw()
-
+        elif self.toolbar.get_current_selection() == PdfViewerToolbarItem.Translate:
+            key = self.canvas.get_clicked_element()
+            self.pdf.translate(key)
+            self.pdf.save()
+            self.redraw()
 
     def on_element_right_clicked_by_canvas(self, event):
         if self.toolbar.get_current_selection() == PdfViewerToolbarItem.MergeAndSplit or self.toolbar.get_current_selection() == PdfViewerToolbarItem.JoinAndSplit:

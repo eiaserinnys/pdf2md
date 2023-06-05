@@ -3,11 +3,12 @@ from enum import Enum, auto
 class PdfViewerToolbarItem(Enum):
     SafeArea = auto(), "Safe Area"
     Visibility = auto(), "Visibility"
+    Body = auto(), "Body"
     MergeAndSplit = auto(), "Concat / Split"
     JoinAndSplit = auto(), "Join / Split"
     Order = auto(), "Order"
-    Body = auto(), "Body"
     Concat = auto(), "Continue"
+    Translate = auto(), "Translate"
 
     # Override the __new__ method to store the display name in addition to the default Enum value
     def __new__(cls, value, display_name):

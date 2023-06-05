@@ -1,11 +1,16 @@
-import asyncio
 import tkinter as tk
+from tkinter import font
 from src.pdf_viewer import PDFViewer
 
-async def main():
+def main():
     root = tk.Tk()
     root.title("pdf2md")
     root.geometry('1200x800')  # set initial window size
+
+    # fonts=list(font.families())
+    # fonts.sort()
+    # for f in fonts:
+    #     print(f)
 
     # path_name = './example/voyager.pdf'
     # intm_name = "./cache/voyager.context"
@@ -18,4 +23,4 @@ async def main():
     app.mainloop()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

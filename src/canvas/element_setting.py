@@ -68,6 +68,16 @@ SETTING_TABLE = {
         },
         False: {'outline': 'gray80', 'fill': 'gray80', 'dash': (5, 3), 'width': 1}
     },
+    PdfViewerToolbarItem.Translate: {
+        True: {
+            True:   {
+                True:   {'outline': 'VioletRed4', 'fill': 'VioletRed4', 'dash': None, 'width': 2},
+                False:  {'outline': 'SlateGray4', 'fill': 'SlateGray4', 'dash': (3, 2), 'width': 1},
+            },
+            False:  {'outline': 'black', 'fill': 'black', 'dash': (5, 3), 'width': 1}
+        },
+        False: {'outline': 'gray80', 'fill': 'gray80', 'dash': (5, 3), 'width': 1}
+    },
     'default': {
         True: {
             True:   {'outline': 'green', 'fill': 'green', 'dash': None, 'width': 2},

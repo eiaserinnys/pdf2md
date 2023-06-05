@@ -1,0 +1,8 @@
+# Instruction
+The following paragraph is part of an academic paper.
+Translate it into Korean.
+
+# Text
+{Text}
+
+# Translation

@@ -3,10 +3,12 @@ import fitz  # PyMuPDF
 import pickle
 from io import BytesIO
 from PIL import Image
-from pdfminer.layout import LAParams, LTTextBox, LTImage, LTFigure
+from pdfminer.layout import LAParams
 from pdfminer.high_level import extract_pages
-from src.pdf.pdf_element import PdfRect, PdfElement, PdfElementType
+from src.pdf.pdf_element import PdfRect, PdfElement
 from src.canvas.utility import check_overlap
+from src.service.openai_completion_service import OpenAICompletionService, CompletionResult
+from src.service.prompt_manager import prompt_manager
 
 class PdfPage:
     def __init__(self, page_number, elements = None):
@@ -99,23 +101,37 @@ class Pdf:
             for _, element in page.elements:
                 element.safe = check_overlap(element.bbox, safe_area)
 
-    def toggle_visibility(self, key_to_toggle):
-        for page in self.context.pages:
-            for key, element in page.elements:
-                if key == key_to_toggle:
-                    element.visible = not element.visible
+    def translate(self, key_to_translate):
+        e = self.get_element(key_to_translate)
+        if e is not None and e.can_be_translated():
+            response = OpenAICompletionService.request_chat_completion(
+                model="gpt-4",
+                messages=[
+                    OpenAICompletionService.user_message(
+                        prompt_manager.generate_prompt(
+                            "translate",
+                            { 
+                                "Text" : e.text, 
+                            })),
+                ],
+                temperature=0.0,
+                verbose_prompt=False,
+                verbose_response=True)
+            
+            if response.status == CompletionResult.OK:
+                e.translated = response.reply_text
 
-    def toggle_body(self, key_to_toggle):
-        for page in self.context.pages:
-            for key, element in page.elements:
-                if key == key_to_toggle:
-                    element.body = not element.body
+    def toggle_visibility(self, key):
+        e = self.get_element(key)
+        e.visible = not e.visible if e is not None else None
 
-    def toggle_continue(self, key_to_toggle):
-        for page in self.context.pages:
-            for key, element in page.elements:
-                if key == key_to_toggle:
-                    element.toggle_continue()
+    def toggle_body(self, key):
+        e = self.get_element(key)
+        e.body = not e.body if e is not None else None
+
+    def toggle_continue(self, key):
+        e = self.get_element(key)
+        e.toggle_continue() if e is not None else None
 
     def split_element(self, key_to_split):
         for page in self.context.pages:
