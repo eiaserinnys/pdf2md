@@ -57,7 +57,7 @@ class PDFViewer(tk.Frame):
         for key, element in self.pdf.iter_elements_page(self.canvas.get_current_page()):
             if not element.safe or not element.visible:
                 continue  # Skip unsafe or invisible elements
-            if element.concat:
+            if element.contd:
                 self.text_widget.insert(tk.END, f'{element.text} ')
             else:
                 self.text_widget.insert(tk.END, f'{element.text}\n')

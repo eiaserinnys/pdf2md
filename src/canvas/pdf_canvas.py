@@ -116,7 +116,15 @@ class PdfCanvas(tk.Canvas):
             elif self.mode == PdfViewerToolbarItem.Order:
                 option = key == self.pivot
             elif self.mode == PdfViewerToolbarItem.Concat:
-                option = 1 if element.concat else 2 if prev_element is not None and prev_element.concat else 0
+                option = 0
+                if element.contd is None:
+                    if prev_element is not None:
+                        if prev_element.contd == 1:
+                            option = 3
+                        elif prev_element.contd == 2:
+                            option = 4
+                else:
+                    option = element.contd
 
             self.elm.add_element(
                 self.mode, 
@@ -125,7 +133,9 @@ class PdfCanvas(tk.Canvas):
                 element.safe, 
                 element.visible, 
                 option,
-                x1, y1, x2, y2)
+                x1, y1, x2, y2,
+                prev_element.contd if prev_element is not None else None,
+                element.contd)
             
             if element.visible and element.safe:
                 index += 1

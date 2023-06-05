@@ -6,6 +6,7 @@ class PdfViewerToolbarItem(Enum):
     MergeAndSplit = auto(), "Concat / Split"
     JoinAndSplit = auto(), "Join / Split"
     Order = auto(), "Order"
+    Body = auto(), "Body"
     Concat = auto(), "Link Next"
 
     # Override the __new__ method to store the display name in addition to the default Enum value

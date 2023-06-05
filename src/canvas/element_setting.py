@@ -50,7 +50,9 @@ SETTING_TABLE = {
             True: {
                 0:  {'outline': 'bisque3', 'fill': 'bisque3', 'dash': (5, 3), 'width': 1},
                 1:   {'outline': 'DeepPink2', 'fill': 'DeepPink2', 'dash': None, 'width': 2},
-                2:   {'outline': 'DeepPink2', 'fill': 'DeepPink2', 'dash': (3, 2), 'width': 1},
+                2:   {'outline': 'purple4', 'fill': 'purple4', 'dash': None, 'width': 2},
+                3:   {'outline': 'DeepPink2', 'fill': 'DeepPink2', 'dash': (3, 2), 'width': 1},
+                4:   {'outline': 'purple4', 'fill': 'purple4', 'dash': (3, 2), 'width': 1},
             },
             False:  {'outline': 'gray40', 'fill': 'gray40', 'dash': (5, 3), 'width': 1}
         },

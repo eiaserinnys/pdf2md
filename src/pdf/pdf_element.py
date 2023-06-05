@@ -8,6 +8,7 @@ class PdfElementType(Enum):
     Image = 3,
     Figure = 4, 
 
+
 @dataclass
 class PdfRect:
     x1: float
@@ -30,7 +31,8 @@ class PdfElement:
         self.safe = True
         self.visible = True
         self.translated = None
-        self.concat = False
+        self.body = True
+        self.contd = None           # continued
         self.marked = False
 
     @classmethod

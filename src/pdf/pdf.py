@@ -109,7 +109,12 @@ class Pdf:
         for page in self.context.pages:
             for key, element in page.elements:
                 if key == key_to_toggle:
-                    element.concat = not element.concat
+                    if element.contd is None:
+                        element.contd = 1
+                    elif element.contd == 1:
+                        element.contd = 2
+                    elif element.contd == 2:
+                        element.contd = None
 
     def split_element(self, key_to_split):
         for page in self.context.pages:
