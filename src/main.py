@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import font
 from src.pdf_viewer import PDFViewer
+from src.config import global_config
 
 def main():
     root = tk.Tk()
@@ -15,7 +16,7 @@ def main():
     # path_name = './example/voyager.pdf'
     # intm_name = "./cache/voyager.context"
     path_name = "./cache/2305.16213.pdf"
-    intm_dir = "./cache"
+    intm_dir = global_config.CACHE_DIR
     # path_name = './example/1751-0473-7-7.pdf'
     # intm_name = './cache/1751-0473-7-7.context'
 

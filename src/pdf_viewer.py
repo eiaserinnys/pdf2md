@@ -5,6 +5,7 @@ from src.pdf.pdf import Pdf
 from src.canvas.pdf_canvas import PdfCanvas
 from src.toolbar.pdf_viewer_toolbar import PdfViewerToolbar
 from src.toolbar.pdf_viewer_toolbar_item import PdfViewerToolbarItem
+from src.config import global_config
 
 class PDFViewer(tk.Frame):
     def __init__(self, pdf_path, intm_dir, master=None):
@@ -36,7 +37,7 @@ class PDFViewer(tk.Frame):
         self.master.bind("<Escape>", self.canvas.on_escape)
 
         # Initialize Text widget
-        self.text_widget = tk.Text(self.paned_window, font=("Segoe UI", 11))
+        self.text_widget = tk.Text(self.paned_window, font=(global_config.TEXT_FONT, global_config.TEXT_FONT_SIZE))
         self.text_widget.config(spacing3=7)
         self.text_widget.pack(fill="both", expand=True)
         self.paned_window.add(self.text_widget)
