@@ -101,25 +101,13 @@ class Pdf:
             for _, element in page.elements:
                 element.safe = check_overlap(element.bbox, safe_area)
 
-    def translate(self, key_to_translate):
-        e = self.get_element(key_to_translate)
-        if e is not None and e.can_be_translated():
-            response = OpenAICompletionService.request_chat_completion(
-                model="gpt-4",
-                messages=[
-                    OpenAICompletionService.user_message(
-                        prompt_manager.generate_prompt(
-                            "translate",
-                            { 
-                                "Text" : e.text, 
-                            })),
-                ],
-                temperature=0.0,
-                verbose_prompt=False,
-                verbose_response=True)
-            
-            if response.status == CompletionResult.OK:
-                e.translated = response.reply_text
+    def find_last_body_element_until(self, page):
+        prev_element = None
+        for i in range(page):
+            for _, element in self.iter_elements_page(i):
+                if element.visible and element.safe and element.body:
+                    prev_element = element
+        return prev_element
 
     def toggle_visibility(self, key):
         e = self.get_element(key)

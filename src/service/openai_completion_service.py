@@ -172,6 +172,8 @@ class OpenAICompletionService:
         temperature=None, 
         top_p=None, 
         stop=None, 
+        stream=False,
+        stream_callback=None,
         verbose_prompt=False, 
         verbose_response=False) -> CompletionData:
 
@@ -179,29 +181,70 @@ class OpenAICompletionService:
             OpenAICompletionService.dump_prompt(messages)
 
         try:
-            completion = openai.ChatCompletion.create(
-                model=model,
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                top_p=top_p,
-                stop=stop
-            )
+            if stream:
+                result = ""
+                prompt_tokens = 0
+                completion_tokens = 0
 
-            response = CompletionData(
-                status=CompletionResult.OK, 
-                reply_text=completion.choices[0].message["content"], 
-                status_text=None,
-                prompt_tokens=completion.usage.prompt_tokens 
-                    if hasattr(completion.usage, "prompt_tokens") else None,
-                completion_tokens=completion.usage.completion_tokens 
-                    if hasattr(completion.usage, "completion_tokens") else None
-            )
+                if verbose_response:
+                    print(Fore.RED + "RESPONSE: " + Fore.GREEN)
 
-            if verbose_response:
-                OpenAICompletionService.dump_response(response)
+                for chunk in openai.ChatCompletion.create(
+                    model=model,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    top_p=top_p,
+                    stop=stop,
+                    stream=True,
+                ):
+                    content = chunk["choices"][0].get("delta", {}).get("content")
 
-            return response
+                    if content is not None:
+                        result += content
+                        if verbose_response:
+                            print(content, end='')
+
+                        if stream_callback is not None:
+                            stream_callback(result, content)
+
+                    if "usage" in chunk:
+                        prompt_tokens += chunk["usage"]["prompt_tokens"]
+                        completion_tokens += chunk["usage"]["completion_tokens"]
+
+                if verbose_response:
+                    print()
+
+                return CompletionData(
+                    status=CompletionResult.OK,
+                    reply_text=result,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                )
+            else:
+                completion = openai.ChatCompletion.create(
+                    model=model,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    top_p=top_p,
+                    stop=stop
+                )
+
+                response = CompletionData(
+                    status=CompletionResult.OK, 
+                    reply_text=completion.choices[0].message["content"], 
+                    status_text=None,
+                    prompt_tokens=completion.usage.prompt_tokens 
+                        if hasattr(completion.usage, "prompt_tokens") else None,
+                    completion_tokens=completion.usage.completion_tokens 
+                        if hasattr(completion.usage, "completion_tokens") else None
+                )
+
+                if verbose_response:
+                    OpenAICompletionService.dump_response(response)
+
+                return response
 
         except openai.error.RateLimitError as e:
             logger.exception(e)

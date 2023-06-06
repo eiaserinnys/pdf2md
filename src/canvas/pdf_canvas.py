@@ -95,11 +95,8 @@ class PdfCanvas(tk.Canvas):
 
         #for element in pdfminer_page:
         index = 1
-        prev_body_element = None
-        for i in range(self.current_page):
-            for key, element in self.pdf.iter_elements_page(i):
-                if element.visible and element.safe and element.body:
-                    prev_body_element = element
+
+        prev_body_element = self.pdf.find_last_body_element_until(self.current_page)
 
         for key, element in elements:
             x1, y1, x2, y2 = element.bbox
@@ -121,18 +118,19 @@ class PdfCanvas(tk.Canvas):
                 option = element.can_be_translated()
             elif self.mode == PdfViewerToolbarItem.Concat:
                 option = 0
-                if element.body:
-                    if element.contd is None:
+                if element.safe and element.visible and element.body:
+                    if element.contd is not None:
+                        option = element.contd
+                    else:
+                        # if the element is not continuing one, we need to check the previous element is continuing one or not
                         if prev_body_element is not None:
                             if prev_body_element.contd == 1:
                                 option = 3
                             elif prev_body_element.contd == 2:
                                 option = 4
-                    else:
-                        option = element.contd
 
             c1 = c2 = None
-            if element.body:
+            if element.safe and element.visible and element.body:
                 c1 = prev_body_element.contd if prev_body_element is not None else None
                 c2 = element.contd
 
