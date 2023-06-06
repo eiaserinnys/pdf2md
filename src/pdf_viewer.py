@@ -59,41 +59,7 @@ class PDFViewer(tk.Frame):
 
     def add_elements_to_text_widget(self):
         self.text_widget.delete('1.0', tk.END)  # Clear the text widget
-
-        for key, element in self.pdf.iter_elements_page(self.canvas.get_current_page()):
-            if not element.safe or not element.visible:
-                continue  # Skip unsafe or invisible elements
-
-            text = element.translated if element.translated is not None else element.text
-
-            if element.contd == 1:
-                self.text_widget.insert(tk.END, f'{text} ')
-            else:
-                # it should be shown as a new line even if it is a join
-                self.text_widget.insert(tk.END, f'{text}\n')
-
-    def add_elements_to_treeview(self):
-        self.dtv.delete_all_items()
-
-        for key, element in self.pdf.iter_elements():
-            tags = ()
-            if not element.safe or not element.visible:
-                tags += ("unsafe",)
-            if element.page_number % 2 == 0:
-                tags += ("oddpage",)
-
-            self.dtv.insert('', "end", key, values=(element.page_number, element.text), tags=tags)
-
-    def on_treeview_select(self, event):
-        # Get the selected item
-        selection = self.dtv.selection()
-        if selection:
-            selected_item = selection[0]
-
-            # Extract the page number from the selected item
-            page_number, _ = self.dtv.item(selected_item, "values")
-
-            self.canvas.change_page(int(page_number) - 1)
+        self.text_widget.insert(tk.END, self.pdf.get_page_text(self.canvas.get_current_page()))
 
     def on_page_changed_by_canvas(self, event):
         self.add_elements_to_text_widget()
@@ -154,8 +120,7 @@ class PDFViewer(tk.Frame):
                 self.canvas.set_pivot(key)
 
     def handle_translate(self):
-        key = self.canvas.get_clicked_element()
-        e = self.pdf.get_element(key)
+        key, e, text = self.pdf.get_chained_text(self.canvas.get_clicked_element())
         if e is not None and e.can_be_translated() and not key in self.translating:
             def request_translation(key, text):
                 print("Requesting translation...")
@@ -202,7 +167,7 @@ class PDFViewer(tk.Frame):
                     self.translating.pop(key)
 
             self.translating[key] = True
-            threading.Thread(target=request_translation, args=(key, e.text)).start()        
+            threading.Thread(target=request_translation, args=(key, text)).start()        
 
     def on_element_right_clicked_by_canvas(self, event):
         if self.toolbar.get_current_selection() == PdfViewerToolbarItem.MergeAndSplit or self.toolbar.get_current_selection() == PdfViewerToolbarItem.JoinAndSplit:

@@ -115,7 +115,7 @@ class PdfCanvas(tk.Canvas):
             elif self.mode == PdfViewerToolbarItem.Body:
                 option = element.body
             elif self.mode == PdfViewerToolbarItem.Translate:
-                option = element.can_be_translated()
+                option = self.pdf.can_be_translated(key)
             elif self.mode == PdfViewerToolbarItem.Concat:
                 option = 0
                 if element.safe and element.visible and element.body:

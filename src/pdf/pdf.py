@@ -68,6 +68,9 @@ class Pdf:
             byte_arr = BytesIO(page.bytes_content)
             self.images.append(Image.open(byte_arr))
 
+        # reconstruct chain list
+        self.build_chain_list()
+
     def build_element_list(self, doc, pdfminer_pages):
         for page_number, pdfminer_page in enumerate(pdfminer_pages):
 
@@ -101,6 +104,55 @@ class Pdf:
             for _, element in page.elements:
                 element.safe = check_overlap(element.bbox, safe_area)
 
+    def build_chain_list(self):
+        self.chains = {}
+        self.to_chain = {}
+
+        last_head_key = None
+        last_head = None
+        last_text = None
+
+        prev_body = None
+
+        for page in self.context.pages:
+            for key, element in page.elements:
+                if element.visible and element.safe and element.body:
+                    if last_head is None:
+                        if element.contd is not None:
+                            # new chain
+                            last_head_key, last_head, last_text = key, element, element.text
+
+                            # save chain head
+                            self.to_chain[key] = key
+                        else:
+                            # new line
+                            #self.chain_list.append((key, element, element.text))
+
+                            # save chain head
+                            #self.to_chain[key] = key
+                            pass
+                    else:
+                        # continue chain
+                        if prev_body.contd == 1:
+                            # continue chain by concat
+                            last_text += " " + element.text
+                        else:
+                            # continue chain by join
+                            last_text += "\n" + element.text
+
+                        # save chain head
+                        self.to_chain[key] = last_head_key
+
+                        if element.contd is None:
+                            # end of chain
+                            self.chains[last_head_key] = (last_head, last_text)
+                            last_head_key, last_head, last_text = None, None, None
+
+                    prev_body = element
+
+        if last_head is not None:
+            self.chains[last_head_key] = (last_head, last_text)
+
     def find_last_body_element_until(self, page):
         prev_element = None
         for i in range(page):
@@ -109,17 +161,75 @@ class Pdf:
                     prev_element = element
         return prev_element
 
+    def get_chained_text(self, key_to_find):
+        if self.to_chain.get(key_to_find) is None:
+            e = self.get_element(key_to_find)
+            return (key_to_find, e, e.text) if e is not None else (None, None, None)
+        else:
+            key = self.to_chain[key_to_find]
+            return (key, self.chains[key][0], self.chains[key][1]) if key is not None else (None, None, None)
+    
+    def get_page_text(self, page):
+        text = ""
+
+        in_continue = True
+
+        for key, element in self.iter_elements_page(page):
+            if not element.safe or not element.visible:
+                continue  # Skip unsafe or invisible elements
+
+            if in_continue:
+                if self.to_chain.get(key) is None and element.body:
+                    in_continue = False
+                else:
+                    if element.body:
+                        text += "(omitted by continuation)\n"
+
+            if not in_continue:
+                if self.to_chain.get(key) is not None:
+                    if self.to_chain[key] == key:
+                        # it is a head of a chain
+                        if element.translated is not None:
+                            text += element.translated + "\n"
+                        else:
+                            text += self.chains[key][1] + "\n"
+                    else:
+                        # it is a continuation of a chain
+                        pass
+                else:
+                    text += element.translated if element.translated is not None else element.text
+                    text += "\n"
+            else:
+                if not element.body:
+                    text += element.text + "\n"
+
+        return text
+
+    def set_safe_margin(self, margin):
+        self.context.margin = margin
+        self.recalculate_safe_area()
+        self.build_chain_list()
+
     def toggle_visibility(self, key):
         e = self.get_element(key)
         e.visible = not e.visible if e is not None else None
+
+        # rebuild chain list
+        self.build_chain_list()
 
     def toggle_body(self, key):
         e = self.get_element(key)
         e.body = not e.body if e is not None else None
 
+        # rebuild chain list
+        self.build_chain_list()
+
     def toggle_continue(self, key):
         e = self.get_element(key)
         e.toggle_continue() if e is not None else None
+
+        # rebuild chain list
+        self.build_chain_list()
 
     def split_element(self, key_to_split):
         for page in self.context.pages:
@@ -132,6 +242,9 @@ class Pdf:
                         for j, new_element in enumerate(element.children):
                             page.elements.insert(i + j, (self.context.index, new_element))
                             self.context.index += 1
+
+                        # rebuild chain list
+                        self.build_chain_list()
                         break
 
     def merge(self, page_number, key_list, concat_or_join):
@@ -173,6 +286,9 @@ class Pdf:
         for e in to_merge:
             e.marked = False
 
+        # rebuild chain list
+        self.build_chain_list()
+
     def move_element(self, pivot_key, key_to_move, page_index, disposition = "after"):
         if pivot_key == None or key_to_move == None or pivot_key == key_to_move or page_index >= len(self.context.pages):
             return
@@ -202,6 +318,9 @@ class Pdf:
 
         page.elements.insert(pivot_index + offset, element_to_move)
 
+        # rebuild chain list
+        self.build_chain_list()
+
         return True
 
     def get_element(self, key):
@@ -209,8 +328,8 @@ class Pdf:
             for k, element in page.elements:
                 if k == key:
                     return element
-        return None    
-
+        return None
+    
     def get_element_in_page(self, page, key):
         if page < len(self.context.pages):
             for k, element in self.context.pages[page].elements:
@@ -231,14 +350,6 @@ class Pdf:
             for key, element in page.elements:
                 yield key, element
 
-    def get_last_element_in_page(self, page_number):
-        """Return the last element of the page safely."""
-        if 0 <= page_number and page_number < len(self.context.pages):
-            page = self.context.pages[page_number]
-            if page.elements:  # Check if elements list is not empty
-                return page.elements[-1][1]  # Return the last element
-        return None  # If page doesn't exist or there are no elements
-
     def get_pixmap(self, page_number):
         return self.images[page_number]
     
@@ -255,9 +366,13 @@ class Pdf:
     def get_page_number(self):
         return len(self.context.pages)
     
-    def set_safe_margin(self, margin):
-        self.context.margin = margin
-        self.recalculate_safe_area()
-
     def save(self):
         self.context.save_to_pickle(self.intm_path)
+
+    def can_be_translated(self, key):
+        if self.to_chain.get(key) is None:
+            e = self.get_element(key)
+            return e.can_be_translated() if e is not None else False
+        else:
+            head = self.chains[self.to_chain[key]][0]
+            return head.can_be_translated() if head is not None else False
