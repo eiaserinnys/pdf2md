@@ -1,5 +1,6 @@
 import tkinter as tk
 import threading
+import os
 from functools import partial
 from tkinter import ttk
 from src.pdf.pdf import Pdf
@@ -16,12 +17,19 @@ class PDFViewer(tk.Frame):
         self.master = master
         self.pack(fill='both', expand=1)
 
+        self.pdf_path = pdf_path
+
+        # Initialize cache directory
+        self.intm_dir = os.path.abspath(intm_dir)
+        os.makedirs(self.intm_dir, exist_ok=True)
+
         # Load the PDF with PyMuPDF and pdfminer
-        self.pdf = Pdf(pdf_path, intm_dir)
+        self.pdf = Pdf(pdf_path, self.intm_dir)
 
         # Create toolbar
         self.toolbar = PdfViewerToolbar(self)
         self.toolbar.bind("<<ToolbarButtonClicked>>", self.on_toolbar_button_clicked)
+        self.toolbar.bind("<<ExportButtonClicked>>", self.on_export_button_clicked)
         for i in range(1, 6):
             self.master.bind(str(i), self.toolbar.key_press)
 
@@ -189,3 +197,10 @@ class PDFViewer(tk.Frame):
 
     def on_toolbar_button_clicked(self, event):
         self.canvas.change_mode(self.toolbar.get_current_selection())
+
+    def on_export_button_clicked(self, event):
+        text = self.pdf.get_text()
+        filename = os.path.splitext(os.path.basename(self.pdf_path))[0] + ".txt"
+        pathname = os.path.join(self.intm_dir, filename)
+        with open(pathname, 'w') as file:
+            file.write(text)

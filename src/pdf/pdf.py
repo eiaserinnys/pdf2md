@@ -205,6 +205,30 @@ class Pdf:
 
         return text
 
+    def get_text(self):
+        text = ""
+
+        for page in self.context.pages:
+            for key, element in page.elements:
+                if not element.safe or not element.visible:
+                    continue  # Skip unsafe or invisible elements
+
+                if self.to_chain.get(key) is not None:
+                    if self.to_chain[key] == key:
+                        # it is a head of a chain
+                        if element.translated is not None:
+                            text += element.translated + "\n"
+                        else:
+                            text += self.chains[key][1] + "\n"
+                    else:
+                        # it is a continuation of a chain
+                        pass
+                else:
+                    text += element.translated if element.translated is not None else element.text
+                    text += "\n"
+
+        return text
+
     def set_safe_margin(self, margin):
         self.context.margin = margin
         self.recalculate_safe_area()

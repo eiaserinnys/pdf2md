@@ -14,6 +14,10 @@ class PdfViewerToolbar(tk.Frame):
 
         self.current_selection = None
 
+        # export
+        self.export_button = tk.Button(self, text="Export", command=lambda: self.export())
+        self.export_button.pack(side='right', padx=2, pady=2)
+
         # Enum 항목을 리스트로 만듭니다.
         self.items = list(PdfViewerToolbarItem)
 
@@ -44,3 +48,6 @@ class PdfViewerToolbar(tk.Frame):
 
     def get_current_selection(self):
         return self.current_selection
+    
+    def export(self):
+        self.event_generate("<<ExportButtonClicked>>", when="tail")
