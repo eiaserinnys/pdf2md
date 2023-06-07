@@ -12,7 +12,7 @@ from src.service.prompt_manager import prompt_manager
 from src.config import global_config
 
 class PDFViewer(tk.Frame):
-    def __init__(self, pdf_path, intm_dir, master=None):
+    def __init__(self, pdf_path, intm_dir, export_dir, master=None):
         super().__init__(master)
         self.master = master
         self.pack(fill='both', expand=1)
@@ -22,6 +22,10 @@ class PDFViewer(tk.Frame):
         # Initialize cache directory
         self.intm_dir = os.path.abspath(intm_dir)
         os.makedirs(self.intm_dir, exist_ok=True)
+
+        # Initialize export directory
+        self.export_dir = os.path.abspath(export_dir)
+        os.makedirs(self.export_dir, exist_ok=True)
 
         # Load the PDF with PyMuPDF and pdfminer
         self.pdf = Pdf(pdf_path, self.intm_dir)
@@ -201,6 +205,6 @@ class PDFViewer(tk.Frame):
     def on_export_button_clicked(self, event):
         text = self.pdf.get_text()
         filename = os.path.splitext(os.path.basename(self.pdf_path))[0] + ".txt"
-        pathname = os.path.join(self.intm_dir, filename)
+        pathname = os.path.join(self.export_dir, filename)
         with open(pathname, 'w') as file:
             file.write(text)

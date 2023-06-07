@@ -1,4 +1,5 @@
 import os
+import sys
 import fitz  # PyMuPDF
 import pickle
 from io import BytesIO
@@ -53,10 +54,21 @@ class Pdf:
             all_texts = False)
 
         if os.path.exists(self.intm_path):
-            self.context = Pdf.Context.load_from_pickle(self.intm_path)
-        else:
-            doc = fitz.open(pdf_path)
-            pdfminer_pages = list(extract_pages(pdf_path, laparams = params))
+            try:
+                self.context = Pdf.Context.load_from_pickle(self.intm_path)
+                print("Loaded cached PDF from", self.intm_path)
+            except:
+                print("Loading cached PDF failed")
+                self.context = None
+        
+        if self.context is None:
+            try:
+                doc = fitz.open(pdf_path)
+                pdfminer_pages = list(extract_pages(pdf_path, laparams = params))
+            except:
+                print("Loading PDF failed")
+                sys.exit(1)
+                
             self.context = Pdf.Context()
             self.build_element_list(doc, pdfminer_pages)
             self.recalculate_safe_area()
