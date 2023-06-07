@@ -32,23 +32,39 @@ PROMPT_DIR="./prompt"
 ## Usage
 The user interface is easy to navigate and manipulate. The various functionalities include:
 
-**Safe Area Button**: Define a safe area in the PDF to designate the primary content. The safe area can be adjusted by dragging the red rectangle and applies to the whole document. (Video placeholder)
+**Safe Area**: Define a safe area in the PDF to designate the primary content. The safe area can be adjusted by dragging the red rectangle and applies to the whole document.
 
-**Visibility Button**: Toggle the visibility of elements in the translation or export. Individual elements can be toggled on and off with a click, or multiple elements can be selected by dragging. (Video placeholder)
+![](/asset/safearea.gif)
 
-**Body Button**: Distinguish body text from non-body elements. Images are automatically marked as non-body and cannot be changed. Use this button to exclude captions when chaining separated paragraphs. (Video placeholder)
+**Visibility**: Toggle the visibility of elements in the translation or export. Individual elements can be toggled on and off with a click, or multiple elements can be selected by dragging.
 
-**Concat / Split**: Merge multiple elements into a single paragraph by dragging, or separate them back into lines with a right click. Merged paragraphs do not include line breaks. (Video placeholder)
+![](/asset/visibility.gif)
 
-**Join / Split**: Similar to Concat/Split, but merges paragraphs with line breaks. (Video placeholder)
+**Body**: Distinguish body text from non-body elements. Images are automatically marked as non-body and cannot be changed. Use this button to exclude captions when chaining separated paragraphs.
 
-**Order**: Adjust the order of paragraphs. First, click an element to set it as the baseline, then left click another element to place it after the baseline, or right click to place it before. Use the Esc key to cancel the selection. (Video placeholder)
+![](/asset/body.gif)
 
-**Chain**: Link paragraphs that have been split over several blocks or pages. A single click links the paragraph to the next body paragraph without a line break, a double click links them with a line break. Chained paragraphs are processed together during translation. (Video placeholder)
+**Concat / Split**: Merge multiple elements into a single paragraph by dragging, or separate them back into lines with a right click. Merged paragraphs do not include line breaks.
+
+![](/asset/concat.gif)
+
+**Join / Split**: Similar to Concat/Split, but merges paragraphs with line breaks.
+
+![](/asset/join.gif)
+
+**Order**: Adjust the order of paragraphs. First, click an element to set it as the baseline, then left click another element to place it after the baseline, or right click to place it before. Use the Esc key to cancel the selection.
+
+![](/asset/order.gif)
+
+**Chain**: Link paragraphs that have been split over several blocks or pages. A single click links the paragraph to the next body paragraph without a line break, a double click links them with a line break. Chained paragraphs are processed together during translation.
+
+![](/asset/chain.gif)
 
 **Translate**: Translates the selected paragraph into Korean. The application currently uses GPT-4, but you can modify the prompt by changing the prompt/translate.txt file.
 
-## Future Enhancements
+![](/asset/translate.gif)
+
+## Roadmap
 - Integration with other translation services such as DeepL.
 - Extraction of images embedded in the PDF.
 - Extraction of tables in the PDF.
