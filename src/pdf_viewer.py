@@ -71,8 +71,10 @@ class PDFViewer(tk.Frame):
         self.translating = {}
 
     def add_elements_to_text_widget(self):
+        self.text_widget.config(state=tk.NORMAL)
         self.text_widget.delete('1.0', tk.END)  # Clear the text widget
         self.text_widget.insert(tk.END, self.pdf.get_page_text(self.canvas.get_current_page()))
+        self.text_widget.config(state=tk.DISABLED)
 
     def on_page_changed_by_canvas(self, event):
         self.add_elements_to_text_widget()

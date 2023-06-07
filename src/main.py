@@ -1,6 +1,7 @@
 import os
 import argparse
 import requests
+from tqdm import tqdm
 from urllib.parse import urlparse
 import tkinter as tk
 from tkinter import font
@@ -24,12 +25,28 @@ def download_file(url, destination):
 
     # Check if the request was successful
     if response.status_code == 200:
+        total_size_in_bytes= int(response.headers.get('content-length', 0))
+
+        if total_size_in_bytes > 0:
+            progress_bar = tqdm(total=total_size_in_bytes, unit='iB', unit_scale=True)
+
         with open(destination, 'wb') as file:
             for chunk in response.iter_content(chunk_size=1024):
-                if chunk:
-                    file.write(chunk)
+                if progress_bar is not None:
+                    progress_bar.update(len(chunk))
+                file.write(chunk)
+
+        if progress_bar is not None:
+            progress_bar.close()
+
+        if total_size_in_bytes != 0 and progress_bar.n != total_size_in_bytes:
+            print("Error, something went wrong.")
+            os.remove(destination)
+            return False
+
         print("File downloaded successfully in ", destination)
         return True
+
     else:
         print("Failed to download file: ", response.status_code)
         return False
