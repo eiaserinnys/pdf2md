@@ -1,5 +1,6 @@
 import tkinter as tk
 import threading
+import requests
 import os
 from functools import partial
 from tkinter import ttk
@@ -134,8 +135,30 @@ class PDFViewer(tk.Frame):
     def handle_translate(self):
         key, e, text = self.pdf.get_chained_text(self.canvas.get_clicked_element())
         if e is not None and e.can_be_translated() and not key in self.translating:
-            def request_translation(key, text):
-                print("Requesting translation...")
+
+            def request_translation_deepl(key, text):
+                print("Requesting translation via RapidAPI DeepL...")
+
+                url = "https://deepl-translator.p.rapidapi.com/translate"
+
+                payload = {
+                    "text": text,
+                    "source": global_config.DEEPL_RAPID_API_SRC_LANG,
+                    "target": global_config.DEEPL_RAPID_API_DST_LANG
+                }
+                headers = {
+                    "content-type": "application/json",
+                    "X-RapidAPI-Key": global_config.DEEPL_RAPID_API_KEY,
+                    "X-RapidAPI-Host": global_config.DEEPL_RAPID_API_HOST
+                }
+
+                response = requests.post(url, json=payload, headers=headers)
+
+                if response.status_code == 200:
+                    self.master.after(0, update_ui, key, response.json()["text"], True)
+
+            def request_translation_openai(key, text):
+                print("Requesting translation via OpenAI...")
                 response = OpenAICompletionService.request_chat_completion(
                     model="gpt-4",
                     messages=[
@@ -179,7 +202,12 @@ class PDFViewer(tk.Frame):
                     self.translating.pop(key)
 
             self.translating[key] = True
-            threading.Thread(target=request_translation, args=(key, text)).start()        
+            if global_config.DEEPL_RAPID_API_KEY is not None:
+                threading.Thread(target=request_translation_deepl, args=(key, text)).start()
+            elif global_config.OPENAI_API_KEY is not None:
+                threading.Thread(target=request_translation_openai, args=(key, text)).start()
+            else:
+                print("No translation API key provided")
 
     def on_element_right_clicked_by_canvas(self, event):
         if self.toolbar.get_current_selection() == PdfViewerToolbarItem.MergeAndSplit or self.toolbar.get_current_selection() == PdfViewerToolbarItem.JoinAndSplit:

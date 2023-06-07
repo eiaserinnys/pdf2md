@@ -12,6 +12,11 @@ class Configuration:
     CACHE_DIR = os.getenv("CACHE_DIR", "./cache")
     EXPORT_DIR = os.getenv("EXPORT_DIR", "./export")
 
+    DEEPL_RAPID_API_KEY = os.getenv("DEEPL_RAPID_API_KEY")
+    DEEPL_RAPID_API_HOST = os.getenv("DEEPL_RAPID_API_HOST")
+    DEEPL_RAPID_API_SRC_LANG = os.getenv("DEEPL_RAPID_API_SRC_LANG", "AUTO")
+    DEEPL_RAPID_API_DST_LANG = os.getenv("DEEPL_RAPID_API_DST_LANG", "KO")
+
     TEXT_FONT = os.getenv("TEXT_FONT", "tkDefaultFont")
     TEXT_FONT_SIZE = os.getenv("TEXT_FONT_SIZE", 11)
 
