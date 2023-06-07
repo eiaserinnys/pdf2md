@@ -27,9 +27,25 @@ CACHE_DIR="./cache"
 EXPORT_DIR="./export"
 TEXT_FONT="Malgun Gothic"
 TEXT_FONT_SIZE=11
+
+# If you want to translate with RapidAPI DeepL API
+DEEPL_RAPID_API_KEY=(your RapidAPI key)
+DEEPL_RAPID_API_HOST=(your RapidAPI host)
+DEEPL_RAPID_API_SRC_LANG=EN
+DEEPL_RAPID_API_DST_LANG=KO
+
+# If you want to translate with OpenAI GPT-4
 OPENAI_API_KEY=(your open ai key)
 PROMPT_DIR="./prompt"
 ```
+
+In Korea, we don't have access to the DeepL API yet, so we use RapidAPI, which has similar pricing terms.
+
+To obtain a RapidAPI DeepL API key, please visit the following website:
+https://rapidapi.com/splintPRO/api/deepl-translator/
+
+To obtain an OpenAI API key, please visit the following website:
+https://platform.openai.com/
 
 ## Usage
 The user interface is easy to navigate and manipulate. The various functionalities include:
@@ -67,7 +83,6 @@ The user interface is easy to navigate and manipulate. The various functionaliti
 ![](/asset/translate.gif)
 
 ## Roadmap
-- Integration with other translation services such as DeepL.
 - Extraction of images embedded in the PDF.
 - Extraction of tables in the PDF.
 - Proper parsing or image extraction of equations in the PDF.
