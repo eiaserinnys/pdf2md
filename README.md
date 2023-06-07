@@ -83,7 +83,6 @@ The user interface is easy to navigate and manipulate. The various functionaliti
 ![](/asset/translate.gif)
 
 ## Roadmap
-- Integration with other translation services such as DeepL.
 - Extraction of images embedded in the PDF.
 - Extraction of tables in the PDF.
 - Proper parsing or image extraction of equations in the PDF.
