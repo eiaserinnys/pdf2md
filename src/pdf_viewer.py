@@ -234,5 +234,5 @@ class PDFViewer(tk.Frame):
         text = self.pdf.get_text()
         filename = os.path.splitext(os.path.basename(self.pdf_path))[0] + ".txt"
         pathname = os.path.join(self.export_dir, filename)
-        with open(pathname, 'w') as file:
+        with open(pathname, 'w', encoding='utf-8') as file:
             file.write(text)
