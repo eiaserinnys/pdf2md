@@ -61,9 +61,11 @@ def main():
     
     intm_dir = global_config.CACHE_DIR
     intm_dir = os.path.abspath(intm_dir)
+    os.makedirs(intm_dir, exist_ok=True)
 
     export_dir = global_config.EXPORT_DIR
     export_dir = os.path.abspath(export_dir)
+    os.makedirs(export_dir, exist_ok=True)
 
     # download file if URL
     if is_url(path_name):

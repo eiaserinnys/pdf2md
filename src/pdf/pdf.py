@@ -53,13 +53,14 @@ class Pdf:
             detect_vertical = False, 
             all_texts = False)
 
+        self.context = None
+
         if os.path.exists(self.intm_path):
             try:
                 self.context = Pdf.Context.load_from_pickle(self.intm_path)
                 print("Loaded cached PDF from", self.intm_path)
             except:
                 print("Loading cached PDF failed")
-                self.context = None
         
         if self.context is None:
             try:
