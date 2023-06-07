@@ -1,6 +1,8 @@
 # pdf2md
 This project, pdf2md, transforms academic paper PDF files into digestible text files. By analyzing the layout of the PDF file, the application restructures paragraphs and translates desired content. The final result is a conveniently exported text file.
 
+![](/asset/pdf2md_230607.jpg)
+
 ## Setup
 We recommend setting up a virtual environment for running the application. This can be done with the following commands:
 
