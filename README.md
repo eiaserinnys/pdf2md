@@ -16,12 +16,8 @@ Next, install the required Python packages:
 pip install -r requirements.txt
 ```
 
-The application can then be run with:
-```
-python -m src.main --f (URL or file name)
-```
+In order to run pdf2md, you need to set up a .env file. An example .env file could look like:
 
-An example .env file could look like:
 ```
 CACHE_DIR="./cache"
 EXPORT_DIR="./export"
@@ -46,6 +42,21 @@ https://rapidapi.com/splintPRO/api/deepl-translator/
 
 To obtain an OpenAI API key, please visit the following website:
 https://platform.openai.com/
+
+## Run
+
+The application can then be run with:
+```
+python -m src.main --f (URL or file name)
+```
+
+In case **the URL points to an Arxiv path**, the program will attempt to infer the PDF file path and read from it.
+
+```
+https://arxiv.org/abs/1706.03762 → https://arxiv.org/pdf/1706.03762.pdf
+```
+
+If no arguments are provided, the program will attempt to read a PDF from **a URL or file path present in your clipboard**.
 
 ## Usage
 The user interface is easy to navigate and manipulate. The various functionalities include:
