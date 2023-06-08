@@ -58,6 +58,11 @@ https://arxiv.org/abs/1706.03762 → https://arxiv.org/pdf/1706.03762.pdf
 
 If no arguments are provided, the program will attempt to read a PDF from **a URL or file path present in your clipboard**.
 
+You can check the list of available fonts in the system with the --l option.
+```
+python -m src.main --l
+```
+
 ## Usage
 The user interface is easy to navigate and manipulate. The various functionalities include:
 
