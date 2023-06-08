@@ -52,16 +52,7 @@ def download_file(url, destination):
         print("Failed to download file: ", response.status_code)
         return False
 
-def get_path_name_to_open():
-    # Create the parser
-    parser = argparse.ArgumentParser(description='Loads a PDF file and exports to a text file.')
-
-    # Add the arguments
-    parser.add_argument('--f', type=str, help='The PDF file to view')
-
-    # Parse the arguments
-    args = parser.parse_args()
-
+def get_path_name_to_open(args):
     # Get the input file
     path_name = args.f
     if path_name is None:
@@ -106,17 +97,35 @@ def try_download(url, intm_dir):
     
     return path_name
 
+def get_arguments():
+    # Create the parser
+    parser = argparse.ArgumentParser(description='Pdf2md: Loads a PDF file and exports to a text file.')
+
+    # Add the arguments
+    parser.add_argument('--f', type=str, help='The PDF file to view')
+    parser.add_argument('--l', action='store_true', help='List available fonts and exit')
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    return args
+
 def main():
+    args = get_arguments()
+
     root = tk.Tk()
     root.title("pdf2md")
     root.geometry('1200x800')  # set initial window size
 
-    # fonts=list(font.families())
-    # fonts.sort()
-    # for f in fonts:
-    #     print(f)
+    if args.l:
+        print("Available fonts:")
+        fonts=list(font.families())
+        fonts.sort()
+        for f in fonts:
+            print(f)
+        return
 
-    path_name = get_path_name_to_open()
+    path_name = get_path_name_to_open(args)
     if path_name is None:
         print("No input file specified")
         return
