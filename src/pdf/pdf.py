@@ -38,7 +38,7 @@ class Pdf:
                 context = pickle.load(file)
             return context
 
-    def __init__(self, pdf_path, intm_dir):
+    def __init__(self, pdf_path, intm_dir, ignore_cache = False):
         self.intm_dir = intm_dir
         self.intm_path = os.path.join(
             intm_dir, 
@@ -57,17 +57,44 @@ class Pdf:
 
         if os.path.exists(self.intm_path):
             try:
-                self.context = Pdf.Context.load_from_pickle(self.intm_path)
-                print("Loaded cached PDF from", self.intm_path)
+                if ignore_cache:
+                    print("Cached PDF found, but ignoring it by --i option")
+                else:
+                    self.context = Pdf.Context.load_from_pickle(self.intm_path)
+                    print("Loaded cached PDF from", self.intm_path)
             except:
                 print("Loading cached PDF failed")
         
+        self.tables = []
+
         if self.context is None:
             try:
                 doc = fitz.open(pdf_path)
                 pdfminer_pages = list(extract_pages(pdf_path, laparams = params))
-            except:
+
+                # camelot requires Ghostscript to be installed, too much hassle
+                # tables = camelot.read_pdf(pdf_path)
+                # print("Total tables extracted:", tables.n)
+                # for i, table in enumerate(tables):
+                #     print("Table", i + 1, ":", table.shape)
+                #     print(table.df)
+
+                # tabula requires Java to be installed, too much hassle
+                # tables = tabula.read_pdf(pdf_path, pages="all")
+                # for i, table in enumerate(tables, start=1):
+                #     print("Table", i, ":", table.shape)
+                #     print(table)
+
+                # pdfplumber is not so good with default settings
+                # pdf = pdfplumber.open(pdf_path)
+                # for p, page in enumerate(pdf.pages):
+                #     t = page.find_tables(table_settings={})
+                #     for table in t:
+                #         self.tables.append((p, table))
+
+            except Exception as e:
                 print("Loading PDF failed")
+                print(e)
                 sys.exit(1)
                 
             self.context = Pdf.Context()

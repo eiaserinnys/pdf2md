@@ -13,7 +13,7 @@ from src.service.prompt_manager import prompt_manager
 from src.config import global_config
 
 class PDFViewer(tk.Frame):
-    def __init__(self, pdf_path, intm_dir, export_dir, master=None):
+    def __init__(self, pdf_path, intm_dir, export_dir, ignore_cache = False, master=None):
         super().__init__(master)
         self.master = master
         self.pack(fill='both', expand=1)
@@ -29,7 +29,7 @@ class PDFViewer(tk.Frame):
         os.makedirs(self.export_dir, exist_ok=True)
 
         # Load the PDF with PyMuPDF and pdfminer
-        self.pdf = Pdf(pdf_path, self.intm_dir)
+        self.pdf = Pdf(pdf_path, self.intm_dir, ignore_cache)
 
         # Create toolbar
         self.toolbar = PdfViewerToolbar(self)

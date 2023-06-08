@@ -72,6 +72,9 @@ def get_path_name_to_open(args):
 def is_arxiv_url(url):
     return url.startswith('https://arxiv.org/abs/')
 
+def is_hugging_face_url(url):
+    return url.startswith('https://huggingface.co/papers/')
+
 def try_download(url, intm_dir):
 
     print("URL detected, trying to download file...")
@@ -80,6 +83,10 @@ def try_download(url, intm_dir):
     if is_arxiv_url(url):
         print("Arxiv URL detected, downloading PDF instead")
         url = url.replace('https://arxiv.org/abs/', 'https://arxiv.org/pdf/')
+        url += ".pdf"
+    elif is_hugging_face_url(url):
+        print("Hugging Face URL detected, downloading PDF instead")
+        url = url.replace('https://huggingface.co/papers/', 'https://arxiv.org/pdf/')
         url += ".pdf"
 
     file_name = get_filename_from_url(url)
@@ -103,7 +110,8 @@ def get_arguments():
 
     # Add the arguments
     parser.add_argument('--f', type=str, help='The PDF file to view')
-    parser.add_argument('--l', action='store_true', help='List available fonts and exit')
+    parser.add_argument('--l', action='store_true', help='Lists available fonts and exit')
+    parser.add_argument('--i', action='store_true', help='Ignores context cache and loads the PDF file again')
 
     # Parse the arguments
     args = parser.parse_args()
@@ -145,7 +153,7 @@ def main():
             return
 
     # show GUI
-    app = PDFViewer(path_name, intm_dir, export_dir, master=root)
+    app = PDFViewer(path_name, intm_dir, export_dir, args.i, master=root)
     app.mainloop()
 
 if __name__ == "__main__":
