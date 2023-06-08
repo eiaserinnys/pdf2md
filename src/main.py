@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import font
 from src.pdf_viewer import PDFViewer
 from src.config import global_config
+import pyperclip
 
 def is_url(string):
     try:
@@ -51,16 +52,7 @@ def download_file(url, destination):
         print("Failed to download file: ", response.status_code)
         return False
 
-def main():
-    root = tk.Tk()
-    root.title("pdf2md")
-    root.geometry('1200x800')  # set initial window size
-
-    # fonts=list(font.families())
-    # fonts.sort()
-    # for f in fonts:
-    #     print(f)
-
+def get_path_name_to_open():
     # Create the parser
     parser = argparse.ArgumentParser(description='Loads a PDF file and exports to a text file.')
 
@@ -72,6 +64,59 @@ def main():
 
     # Get the input file
     path_name = args.f
+    if path_name is None:
+
+        # check if there is a path in the clipboard
+        text = pyperclip.paste()
+
+        if is_url(text):
+            print("There is an URL in the clipboard, using that as input")
+            path_name = text
+        elif os.path.isfile(text):
+            print("There is a path name in the clipboard, using that as input")
+            path_name = text
+
+    return path_name
+
+def is_arxiv_url(url):
+    return url.startswith('https://arxiv.org/abs/')
+
+def try_download(url, intm_dir):
+
+    print("URL detected, trying to download file...")
+
+    # if arxiv URL, download PDF instead
+    if is_arxiv_url(url):
+        print("Arxiv URL detected, downloading PDF instead")
+        url = url.replace('https://arxiv.org/abs/', 'https://arxiv.org/pdf/')
+        url += ".pdf"
+
+    file_name = get_filename_from_url(url)
+    if file_name == "":
+        print("Failed to get filename from URL")
+        return None
+
+    path_name = os.path.join(intm_dir, file_name)
+
+    if os.path.isfile(path_name):
+        print(f"File '{path_name}' already exists, skipping download")
+    else:
+        if not download_file(url, path_name):
+            return None
+    
+    return path_name
+
+def main():
+    root = tk.Tk()
+    root.title("pdf2md")
+    root.geometry('1200x800')  # set initial window size
+
+    # fonts=list(font.families())
+    # fonts.sort()
+    # for f in fonts:
+    #     print(f)
+
+    path_name = get_path_name_to_open()
     if path_name is None:
         print("No input file specified")
         return
@@ -86,22 +131,9 @@ def main():
 
     # download file if URL
     if is_url(path_name):
-        print("URL detected, downloading file...")
-
-        url = path_name
-
-        file_name = get_filename_from_url(url)
-        
-        if file_name == "":
-            print("Failed to get filename from URL")
+        path_name = try_download(path_name, intm_dir)
+        if path_name is None:
             return
-
-        path_name = os.path.join(intm_dir, file_name)
-
-        if os.path.isfile(path_name):
-            print(f"File '{path_name}' already exists, skipping download")
-        else:
-            download_file(url, path_name)
 
     # show GUI
     app = PDFViewer(path_name, intm_dir, export_dir, master=root)
