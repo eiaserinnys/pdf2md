@@ -50,10 +50,11 @@ The application can then be run with:
 python -m src.main --f (URL or file name)
 ```
 
-In case **the URL points to an Arxiv path**, the program will attempt to infer the PDF file path and read from it.
+In case **the URL points to an Arxiv or an HuggingFace path**, the program will attempt to infer the PDF file path and read from it.
 
 ```
 https://arxiv.org/abs/1706.03762 → https://arxiv.org/pdf/1706.03762.pdf
+https://huggingface.co/papers/1706.03762 → https://arxiv.org/pdf/1706.03762.pdf
 ```
 
 If no arguments are provided, the program will attempt to read a PDF from **a URL or file path present in your clipboard**.
