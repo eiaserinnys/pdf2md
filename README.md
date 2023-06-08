@@ -8,7 +8,14 @@ We recommend setting up a virtual environment for running the application. This 
 
 ```
 python -m venv .venv
+
 # Activate the virtual environment depending on your platform
+# Windows
+source .venv/bin/activate
+
+# linux
+source .venv/bin/activate   # or
+. .venv/bin/activate
 ```
 
 Next, install the required Python packages:
