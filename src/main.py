@@ -28,6 +28,7 @@ def download_file(url, destination):
     if response.status_code == 200:
         total_size_in_bytes= int(response.headers.get('content-length', 0))
 
+        progress_bar = None
         if total_size_in_bytes > 0:
             progress_bar = tqdm(total=total_size_in_bytes, unit='iB', unit_scale=True)
 
